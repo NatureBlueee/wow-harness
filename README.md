@@ -1,3 +1,5 @@
+[中文](README.zh-CN.md) | English
+
 # wow-harness
 
 > "How do you let AI handle so much development with so little supervision?"
