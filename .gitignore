@@ -1,0 +1,29 @@
+# Runtime state (written by hooks/installer, never committed)
+.wow-harness/install-staging/
+.wow-harness/metrics/
+.wow-harness/install-log.jsonl
+.wow-harness/install-trust-token.json
+.wow-harness/trust-status.json
+
+# Secrets / env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
