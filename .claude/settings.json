@@ -68,6 +68,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Read|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(/Users/nature/个人项目/wow-harness/scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/sanitize-on-read.py",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PreCompact": [

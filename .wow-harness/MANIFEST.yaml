@@ -91,6 +91,7 @@ settings_command_registry:
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/trace-analyzer.py,                timeout: 30, args: "analyze --days 1 --min-samples 3" }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/deploy-progress-on-session-end.py, timeout: 5 }
   - { stage: PostToolUseFailure, matcher: "*",          script: scripts/hooks/failure-analyzer.py,              timeout: 5 }
+  - { stage: PreToolUse,         matcher: "Read|Bash",  script: scripts/hooks/sanitize-on-read.py,             timeout: 10 }
 
 # ---------------------------------------------------------------------------
 # rebaseline_triggers — WP-SEC-1 detect_rebaseline_triggers.py consumption.
@@ -111,7 +112,7 @@ rebaseline_triggers:
 #   WP-11 commit: 18 (+ install-wow-harness SKILL.md)
 # ---------------------------------------------------------------------------
 
-physical_files: 17
+physical_files: 18
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.

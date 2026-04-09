@@ -10,7 +10,7 @@
 | INDEX.md | active | 本索引文件 |
 | ref-review-sop.md | active | 审查闭环 SOP（TeamCreate 用法、维度矩阵） |
 | ref-stages.md | active | 五阶段深度定义（消费方发现门禁清单） |
-| install-wow-harness | (TODO WP-11) | install/setup — phase C slot，尚未落地 |
+| install-wow-harness | install-wow-harness.md | install/setup — Phase 2 自动安装 skill (三档 + 显式点名 + Gate 8 反思) |
 
 ## Phase B→C Transition Gate
 

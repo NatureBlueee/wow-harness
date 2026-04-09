@@ -75,6 +75,84 @@ def main():
     # SessionEnd hook 无需 decision 字段（schema 只接受 approve/block）
     # 本 hook 是纯观察性的，不干预会话走向
 
+    # Gate 8 PASS forced reflection loop (ADR-043 §3.4.6, WP-11)
+    # Check if a plan just completed Gate 8 → spawn crystal-learn agent
+    _check_gate8_reflection()
+
+
+def _check_gate8_reflection():
+    """If Gate 8 PASS was recorded in this session, emit a reflection trigger.
+
+    We check for .wow-harness/state/gate8-pass-pending.json written by
+    the lead state machine when Gate 8 transitions to PASS. If found,
+    we write a trigger file that the main CC agent picks up to spawn
+    a crystal-learn background agent.
+
+    Why a trigger file instead of direct Agent spawn?
+    - This hook runs as a subprocess, not inside CC's agent loop
+    - It cannot call Agent() directly
+    - Instead it writes a proposal trigger that the session-start hook
+      or lead skill picks up on next session start
+
+    Tier check: only fires for adapt/mine, not drop-in.
+    """
+    gate8_marker = Path(".wow-harness/state/gate8-pass-pending.json")
+    if not gate8_marker.exists():
+        return
+
+    try:
+        data = json.loads(gate8_marker.read_text())
+    except (json.JSONDecodeError, OSError):
+        return
+
+    plan_id = data.get("plan_id", "unknown")
+    tier = data.get("install_tier", "adapt")
+
+    if tier == "drop-in":
+        # drop-in users don't want reflection
+        gate8_marker.unlink(missing_ok=True)
+        return
+
+    # Write reflection trigger for next session pickup
+    proposals_dir = Path(".wow-harness/proposals")
+    proposals_dir.mkdir(parents=True, exist_ok=True)
+
+    trigger = {
+        "type": "gate8_reflection",
+        "plan_id": plan_id,
+        "tier": tier,
+        "requested_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "instruction": (
+            "spawn crystal-learn background agent with: "
+            f"Agent(subagent_type='crystal-learn', run_in_background=true, "
+            f"prompt='Reflect on plan {plan_id} completion. "
+            "Read all WP LOG.md files and Gate 8 review results. "
+            "Produce proposals for new invariants, rules, or hook improvements.')"
+        ),
+    }
+
+    trigger_path = proposals_dir / f"{plan_id}-reflection-trigger.json"
+    trigger_path.write_text(json.dumps(trigger, indent=2, ensure_ascii=False) + "\n")
+
+    sys.stderr.write(
+        f"[session-reflection] Gate 8 PASS detected for {plan_id}. "
+        f"Reflection trigger written to {trigger_path}\n"
+    )
+
+    # Clean up marker so we don't re-trigger
+    gate8_marker.unlink(missing_ok=True)
+
+    # Log the event
+    METRICS_DIR.mkdir(parents=True, exist_ok=True)
+    event = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "event": "gate8_reflection_triggered",
+        "plan_id": plan_id,
+        "tier": tier,
+    }
+    with open(METRICS_DIR / "session-reflections.jsonl", "a") as f:
+        f.write(json.dumps(event, ensure_ascii=False) + "\n")
+
 
 if __name__ == "__main__":
     main()
