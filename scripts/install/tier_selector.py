@@ -40,11 +40,22 @@ class TierPolicy:
         str_path = str(path.resolve())
         str_root = str(repo_root.resolve())
 
+        # Transcript detection (both inside and outside repo)
+        if ".claude/projects/" in str_path and str_path.endswith(".jsonl"):
+            if not self.can_read_transcripts:
+                return False
+            # mine: must be from a named project
+            if self.named_projects:
+                return any(
+                    str_path.startswith(str(Path(p).resolve()))
+                    for p in self.named_projects
+                )
+            return self.can_read_transcripts
+
         # Bundle files always readable
         if str_path.startswith(str_root):
-            # Within repo: always OK for all tiers
             if not self.can_read_project_docs:
-                # drop-in: only .wow-harness/ and .claude/ (bundle dirs)
+                # drop-in: only bundle dirs
                 rel = path.resolve().relative_to(repo_root.resolve())
                 parts = rel.parts
                 if parts and parts[0] in (".wow-harness", ".claude", "scripts", "schemas"):
@@ -52,9 +63,6 @@ class TierPolicy:
                 return False
             return True
 
-        # Outside repo: transcript paths
-        if ".claude/projects/" in str_path and str_path.endswith(".jsonl"):
-            return self.can_read_transcripts
         return False
 
 
