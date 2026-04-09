@@ -1,6 +1,17 @@
 # Runtime state (written by hooks/installer, never committed)
-.wow-harness/install-staging/
-.wow-harness/metrics/
+# Use negation so .gitkeep sentinels remain tracked for WP-01b skeleton.
+.wow-harness/install-staging/*
+!.wow-harness/install-staging/.gitkeep
+.wow-harness/metrics/*
+!.wow-harness/metrics/.gitkeep
+.wow-harness/proposals/*
+!.wow-harness/proposals/.gitkeep
+.wow-harness/guard/*
+!.wow-harness/guard/.gitkeep
+.wow-harness/active-review-agents/*
+!.wow-harness/active-review-agents/.gitkeep
+.wow-harness/tasks/*
+!.wow-harness/tasks/.gitkeep
 .wow-harness/install-log.jsonl
 .wow-harness/install-trust-token.json
 .wow-harness/trust-status.json

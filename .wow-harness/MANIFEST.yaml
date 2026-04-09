@@ -1,0 +1,19 @@
+{
+  "manifest_version": "0.1.0",
+  "schema_owner": "PLAN-086 WP-01b (skeleton) + WP-03 (registry fill)",
+  "notes": "WP-01b writes skeleton with empty registries. WP-03 fills L1-L5 and settings_command_registry. WP-11 increments physical_files to 18. All field semantics defined in ADR-043 section 4 + section 13.5.",
+
+  "L1_registry": [],
+  "L2_registry": [],
+  "L3_registry": [],
+  "L4_registry": [],
+  "L5_registry": [],
+
+  "settings_command_registry": [],
+
+  "rebaseline_triggers": [],
+
+  "physical_files": 0,
+
+  "bash_read_keywords": []
+}
