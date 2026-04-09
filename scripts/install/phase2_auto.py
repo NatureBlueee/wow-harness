@@ -303,17 +303,20 @@ def main() -> int:
                 _log_event(project_root, "index_slot_filled")
                 itt.refresh(REPO_ROOT)
 
-    # Step 6: mine transcripts if tier=mine
-    if policy.can_read_transcripts and policy.named_projects:
+    # Step 6: mine transcripts if tier=mine (output to first target project)
+    if policy.can_read_transcripts and policy.named_projects and not args.dry_run:
         from transcript_miner import mine_transcripts  # noqa: E402
-        result = mine_transcripts(policy.named_projects)
+        target_proposals = project_paths[0] / ".wow-harness" / "proposals" if project_paths else None
+        result = mine_transcripts(policy.named_projects, output_dir=target_proposals)
         if result:
-            print(f"  Transcript mining seed: {result}")
+            print(f"\n  Transcript mining seed: {result}")
+            _log_event(project_paths[0], "transcript_mined", f"seed={result.name}")
 
     # Step 7: register projects
     if not args.dry_run:
         register_projects(project_paths, args.tier)
-        _log_event(REPO_ROOT, "install_complete", f"tier={args.tier} projects={len(project_paths)}")
+        for pr in project_paths:
+            _log_event(pr, "install_complete", f"tier={args.tier} projects={len(project_paths)}")
 
     # Verification: second dry-run should show no changes
     if not args.dry_run:

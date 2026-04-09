@@ -32,8 +32,20 @@ MAX_MESSAGES_PER_TRANSCRIPT = 200
 
 
 def _project_slug(project_path: str) -> str:
-    """Convert project path to Claude Code's slug format (- separated)."""
-    return project_path.replace("/", "-").replace(" ", "-").lstrip("-")
+    """Convert project path to Claude Code's slug format.
+
+    CC slug rule: each char → itself if ASCII alphanumeric or in '-_.',
+    '/' and ' ' → '-', non-ASCII char → '-'. No folding of consecutive dashes.
+    """
+    slug = []
+    for ch in project_path:
+        if ch in ("/" , " "):
+            slug.append("-")
+        elif ch.isascii() and (ch.isalnum() or ch in "-_."):
+            slug.append(ch)
+        else:
+            slug.append("-")  # non-ASCII → '-'
+    return "".join(slug)
 
 
 def _find_transcripts(named_projects: list[str]) -> list[Path]:
@@ -55,7 +67,11 @@ def _find_transcripts(named_projects: list[str]) -> list[Path]:
 
 
 def _extract_user_intents(transcript_path: Path) -> list[str]:
-    """Extract user messages from a transcript .jsonl, filtering noise."""
+    """Extract user messages from a CC transcript .jsonl, filtering noise.
+
+    CC transcript format: {"type": "user", "message": {"content": [...]}, ...}
+    Not the simpler {"role": "user", "content": "..."} format.
+    """
     intents: list[str] = []
     noise_prefixes = (
         "/clear", "/model", "/help", "local-command", "/compact",
@@ -69,9 +85,12 @@ def _extract_user_intents(transcript_path: Path) -> list[str]:
                     msg = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                if msg.get("role") != "user":
+                # CC transcript uses "type" not "role"
+                if msg.get("type") != "user":
                     continue
-                content = msg.get("content", "")
+                # Content is nested: msg.message.content
+                message = msg.get("message", {})
+                content = message.get("content", "") if isinstance(message, dict) else ""
                 if isinstance(content, list):
                     content = " ".join(
                         c.get("text", "") for c in content
