@@ -1,0 +1,32 @@
+# ADR-038 D11.1 — Shared tool whitelist for read-only review agents
+#
+# Reference: .claude/rules/review-agent-isolation.md
+# Context:   https://github.com/NatureBlueee/wow-harness
+#
+# Why schema-level, not prompt-level:
+#   Prompt constraints achieve ~70% adherence (OpenDev arXiv:2603.05344).
+#   Schema-level exclusion achieves 100% — the tool cannot be invoked at all.
+#
+# Usage:
+#   Copy the `tools:` list below into any local review agent's frontmatter.
+#   Do NOT add Edit / Write / Bash / NotebookEdit — that defeats the point.
+
+# Copy this into your agent's frontmatter (key must be `tools:`, not `tools_allowed:`)
+tools:
+  - Read
+  - Glob
+  - Grep
+  - WebFetch
+
+# Explicitly excluded (no entry = physically unavailable to the agent):
+#   Edit, Write, Bash, NotebookEdit, Task
+
+# Exception: if a review agent needs Bash for read-only git commands,
+# add it here AND document the deviation per review-agent-isolation.md §"例外申请".
+# See also: scripts/hooks/review-agent-gatekeeper.py REQUIRED_DIRECTIVES.
+bash_allowed_patterns: []
+# Example of a documented exception:
+#   bash_allowed_patterns:
+#     - "git log"
+#     - "git show"
+#     - "git diff"
