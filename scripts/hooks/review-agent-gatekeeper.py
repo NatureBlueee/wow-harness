@@ -19,7 +19,7 @@ What this hook does:
 - Checks if the spawned subagent is a known review/audit type
 - If yes, requires the prompt to contain the read-only directive
 - If the prompt is missing the directive, BLOCKS (exit 2) with a clear error
-- Writes a session marker to `.towow/active-review-agents/<id>.json` so
+- Writes a session marker to `.wow-harness/active-review-agents/<id>.json` so
   downstream hooks can correlate
 
 This is gate-at-the-spawn-boundary enforcement — schema-level on the only
@@ -38,7 +38,7 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-ACTIVE_DIR = REPO_ROOT / ".towow" / "active-review-agents"
+ACTIVE_DIR = REPO_ROOT / ".wow-harness" / "active-review-agents"
 
 # Plugin review agents from .claude/agents/review-base.yaml application list
 REVIEW_SUBAGENT_PATTERNS = (

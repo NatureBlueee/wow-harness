@@ -1,0 +1,36 @@
+# ADR-038 D11.2 — Plugin review agent subagent-type allow-list
+#
+# STATUS: Documentation mirror of scripts/hooks/review-agent-gatekeeper.py constants.
+# The gatekeeper script currently hardcodes these values as Python tuples.
+# Intended future state: the script should load from this file at runtime
+# (making this the single source of truth). Until that refactor is done,
+# keep this file in sync with the script manually.
+#
+# Reference: .claude/rules/review-agent-isolation.md §"插件 review agent"
+
+# Plugin review agent subagent_type patterns to gate.
+# Prefix match: "pr-review-toolkit:code-reviewer" matches "pr-review-toolkit:code-reviewer*"
+review_subagent_patterns:
+  - pr-review-toolkit:code-reviewer
+  - pr-review-toolkit:silent-failure-hunter
+  - pr-review-toolkit:type-design-analyzer
+  - pr-review-toolkit:comment-analyzer
+  - pr-review-toolkit:pr-test-analyzer
+  - feature-dev:code-reviewer
+  - feature-dev:code-explorer
+
+# Local agents listed here are exempt from the gatekeeper check.
+# Their frontmatter tools: list already enforces schema-level isolation (D11.1).
+local_review_exempt:
+  - review-readonly
+
+# Required directives — the spawning prompt must contain at least one of these
+# strings for the spawn to be allowed through.
+# Keep in sync with REQUIRED_DIRECTIVES tuple in review-agent-gatekeeper.py.
+required_directives:
+  - "MUST NOT call Edit"
+  - "MUST NOT use Edit"
+  - "read-only reviewer"
+  - "read-only mode"
+  - "schema-level read-only"
+  - "ADR-038 D11"
