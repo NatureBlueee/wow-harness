@@ -82,10 +82,18 @@ Each skill has `{{PLACEHOLDER}}` structural slots designed to be filled with you
 
 ## Install
 
+**Prerequisites:** generate an install key before running the installer:
+
+```bash
+export WOW_HARNESS_INSTALL_HMAC_KEY=$(openssl rand -hex 32)
+```
+
+Then clone and run:
+
 ```bash
 git clone https://github.com/NatureBlueee/wow-harness.git
-cd wow-harness
-python3 scripts/install/phase2_auto.py /path/to/your/project --tier drop-in
+cd /path/to/your/project
+python3 /path/to/wow-harness/scripts/install/phase2_auto.py --auto --tier drop-in --scope current
 ```
 
 ### Three Tiers
@@ -125,6 +133,7 @@ The installer is idempotent — run it twice, get the same result.
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
 - Python 3.9+
 - Git
+- `WOW_HARNESS_INSTALL_HMAC_KEY` environment variable (generate with `openssl rand -hex 32`)
 
 ## Origin
 
