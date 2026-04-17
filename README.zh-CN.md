@@ -112,6 +112,16 @@ your-project/
 
 安装器是幂等的——跑两次，结果一样。
 
+### Cursor CLI + 全局 hooks（可选）
+
+若要在**任意仓库**通过用户级 Cursor / Claude 配置复用同一套 hook（而不必每个仓库都提交 `.cursor/`），可安装分发器：
+
+```bash
+python3 scripts/install/wow_global_hooks.py install
+```
+
+说明见 [docs/dual-cli-global-hooks.md](docs/dual-cli-global-hooks.md)。
+
 ## 设计原则
 
 1. **Hook 优于指令** — 重要的事不靠说，靠执行。

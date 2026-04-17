@@ -1,19 +1,19 @@
 # issue-adapter.yaml — project-level config for scripts/guard-feedback.py
 #
-# Default state: disabled. Turn on by setting enabled: true and declaring
-# at least one route or guard. Leaving this file as-is = pure noop (the
-# hook reads, sees enabled: false, exits 0 silently).
+# Default: enabled: false = PostToolUse guard-feedback is a pure noop (safe for
+# third-party installs). Set enabled: true when you want built-in context routing
+# + guards (wow-harness contributors often enable this in a local working copy).
 #
-# See scripts/guard-feedback.py module docstring for full schema.
+# Future: optional ``routes`` / ``guards`` below for project-specific wiring.
 
 enabled: false
 
 # When enabled, point fragments_dir to where your context fragments live.
 # Each fragment is a markdown file that gets injected into Claude's context
 # when the matching file is edited.
-fragments_dir: scripts/fragments
+fragments_dir: scripts/context-fragments
 
-# routes: file-glob → fragment-name pairs
+# routes: file-glob → fragment-name pairs (reserved; optional future extension)
 # Example:
 #   routes:
 #     - pattern: "backend/**/*.py"
