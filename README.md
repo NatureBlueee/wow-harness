@@ -112,6 +112,16 @@ your-project/
 
 The installer is idempotent — run it twice, get the same result.
 
+### Cursor CLI + global hooks (optional)
+
+To use the same hook bundle from **any** checkout via user-level Cursor and Claude config (without committing `.cursor/` into every repo), install the bundled dispatcher:
+
+```bash
+python3 scripts/install/wow_global_hooks.py install
+```
+
+Details: [docs/dual-cli-global-hooks.md](docs/dual-cli-global-hooks.md).
+
 ## Design Principles
 
 1. **Hooks over instructions** — If compliance matters, don't ask. Enforce.

@@ -113,11 +113,10 @@ rebaseline_triggers:
 # physical_files — WP-SEC-1 CI double-commit count assertion.
 #   WP-03 commit: 17 (15 hooks + 2 root scripts)
 #   WP-11 commit: 18 (+ install-wow-harness SKILL.md)
-#   post-audit: 22 (+ risk-tracker, session-start-reset-risk, sanitize-on-read,
-#                     context_router, guard_router)
+#   post-audit: 20 (hooks + guard-feedback.py + deploy-guard.py; live count from count-components.sh)
 # ---------------------------------------------------------------------------
 
-physical_files: 22
+physical_files: 20
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.
