@@ -1,12 +1,11 @@
 # issue-adapter.yaml — project-level config for scripts/guard-feedback.py
 #
-# Default: enabled: false = PostToolUse guard-feedback is a pure noop (safe for
-# third-party installs). Set enabled: true when you want built-in context routing
-# + guards (wow-harness contributors often enable this in a local working copy).
+# PostToolUse guard-feedback: enabled: true runs context routing + guards.
+# Set enabled: false for a pure noop (e.g. third-party installs from bundle).
 #
 # Future: optional ``routes`` / ``guards`` below for project-specific wiring.
 
-enabled: false
+enabled: true
 
 # When enabled, point fragments_dir to where your context fragments live.
 # Each fragment is a markdown file that gets injected into Claude's context

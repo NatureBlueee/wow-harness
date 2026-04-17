@@ -35,7 +35,7 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 ## 与 `issue-adapter.yaml` 的关系
 
-若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`（安装器默认），则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。在本仓库上开发 wow-harness 时，可将该项改为 `enabled: true` 以狗食完整 guard 路径。
+若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`，则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。设为 `enabled: true` 则启用完整 context 路由与 guard 检查。
 
 ## 参考
 
