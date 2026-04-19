@@ -31,6 +31,7 @@ CURSOR_SUBCOMMANDS = frozenset(
         "session-end-reflection",
         "session-end-trace",
         "session-end-deploy-progress",
+        "before-submit-harness-ping",
     }
 )
 
@@ -230,6 +231,21 @@ def run_cursor_bridge(root: Path, subcommand: str, stdin: str) -> None:
     _log_event("cursor", subcommand, mode="run_global_bridge", root=root)
     _append_visible_touch(root, "cursor", subcommand)
     py = sys.executable
+    if subcommand == "before-submit-harness-ping":
+        result = run_script(
+            root,
+            [py, str(script_path(root, "scripts/hooks/before-submit-harness-ping.py"))],
+            stdin,
+            5,
+        )
+        if result.stderr:
+            sys.stderr.write(result.stderr)
+        if result.stdout:
+            sys.stdout.write(result.stdout)
+        else:
+            print("{}")
+        sys.exit(result.returncode)
+
     if subcommand == "pre-sanitize":
         result = run_script(root, [py, str(script_path(root, "scripts/hooks/sanitize-on-read.py"))], stdin, 30)
         raw = (result.stdout or "").strip()
