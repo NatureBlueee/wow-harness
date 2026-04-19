@@ -6,8 +6,10 @@ same regex classes as chokepoint_A (sanitize.py) via shared
 scripts/lib/sanitize_patterns.py — single truth source, no INV-4 drift.
 
 For Read tool: reads the target file, classifies lines.
-For Bash tool: only activates on read-like commands (keywords from
-  MANIFEST.yaml bash_read_keywords), then scans referenced file paths.
+For Bash / Shell tool: Claude Code names terminal runs ``Bash``; Cursor Agent
+hooks use ``Shell`` for the same role. Both are handled identically: only
+activates on read-like commands (keywords from MANIFEST.yaml bash_read_keywords),
+then scans referenced file paths.
 
 Exit codes:
   0   clean or degraded (PII/NETWORK/PROTOCOL_INTERNAL = warn, don't block)
@@ -168,7 +170,7 @@ def main() -> int:
             file_path = Path(raw_path)
             scan_paths = [file_path]
 
-    elif tool_name == "Bash":
+    elif tool_name in ("Bash", "Shell"):
         command = tool_input.get("command", "")
         if not _is_read_command(command):
             _output_decision("approve")
