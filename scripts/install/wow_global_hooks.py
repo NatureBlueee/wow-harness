@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Install user-level Cursor + Claude + (optional) OpenCode hooks that delegate to a wow-harness checkout.
 
-Copies bundled ``wow_agent_dispatch.py`` to ``~/.wow-agent-hooks/`` and registers it in
-``~/.cursor/hooks.json`` and ``~/.claude/settings.json``. OpenCode plugin is optional
-(see ``scripts/install/templates/wow-harness-autodispatch.js``).
+Copies bundled ``wow_agent_dispatch.py`` and ``va-agent-wrap.sh`` to ``~/.wow-agent-hooks/``,
+registers the dispatcher in ``~/.cursor/hooks.json`` and ``~/.claude/settings.json``,
+and appends a managed ``agent()`` shell shim to ``~/.bashrc`` / ``~/.zshrc`` when present.
+OpenCode plugin is optional (see ``scripts/install/templates/wow-harness-autodispatch.js``).
 
 Usage (from any directory, after wow-harness is installed in a project or you use global dispatch):
 
@@ -55,8 +56,33 @@ def bundled_dispatcher() -> Path:
     return install_dir() / "wow_agent_dispatch.py"
 
 
+def bundled_va_agent_wrap() -> Path:
+    return install_dir() / "va-agent-wrap.sh"
+
+
 def installed_dispatcher() -> Path:
     return Path.home() / ".wow-agent-hooks" / "wow_agent_dispatch.py"
+
+
+def installed_va_agent_wrap() -> Path:
+    return Path.home() / ".wow-agent-hooks" / "va-agent-wrap.sh"
+
+
+SHIM_MARKER = (
+    "# wow-harness-universal-agent-shim-v2 (managed by wow_global_hooks.py; do not edit by hand)"
+)
+
+
+def shim_body() -> str:
+    return f"""{SHIM_MARKER}
+if [[ -x "$HOME/.wow-agent-hooks/va-agent-wrap.sh" ]]; then
+  wow_harness_agent_dispatch() {{
+    "$HOME/.wow-agent-hooks/va-agent-wrap.sh" "$@"
+  }}
+  if ! [[ "$(type -t agent 2>/dev/null)" == function ]]; then
+    agent() {{ wow_harness_agent_dispatch "$@"; }}
+  fi
+fi"""
 
 
 def cursor_hooks_path() -> Path:
@@ -87,6 +113,114 @@ def copy_bundled_dispatcher() -> Path:
     dst.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(src, dst)
     return dst
+
+
+def copy_va_agent_wrap() -> Path | None:
+    src = bundled_va_agent_wrap()
+    if not src.is_file():
+        return None
+    dst = installed_va_agent_wrap()
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(src, dst)
+    mode = dst.stat().st_mode
+    dst.chmod(mode | 0o111)
+    return dst
+
+
+def strip_legacy_voiceagent_block(text: str) -> str:
+    """Remove the old VoiceAgent-only ~/.bashrc / ~/.zshrc shim (if present)."""
+    marker = "wow-harness VoiceAgent agent shim"
+    if marker not in text:
+        return text
+    lines = text.splitlines(keepends=True)
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        if marker in lines[i]:
+            i += 1
+            prev_non_empty = ""
+            while i < len(lines):
+                li = lines[i]
+                s = li.strip()
+                if s and not s.startswith("#"):
+                    prev_non_empty = li
+                if s == "fi" and "agent()" in prev_non_empty and "_voiceagent_agent_shim" in prev_non_empty:
+                    i += 1
+                    break
+                i += 1
+            continue
+        out.append(lines[i])
+        i += 1
+    return "".join(out)
+
+
+def _strip_v2_shim_block(text: str) -> str:
+    if SHIM_MARKER not in text:
+        return text
+    before, after = text.split(SHIM_MARKER, 1)
+    lines = after.splitlines(keepends=True)
+    i = 0
+    while i < len(lines) and not lines[i].strip():
+        i += 1
+    if i >= len(lines):
+        return before.rstrip() + "\n"
+    first = lines[i].strip()
+    if not (first.startswith("if [[") and "va-agent-wrap" in lines[i]):
+        return text
+    depth = 0
+    while i < len(lines):
+        line = lines[i]
+        s = line.strip()
+        if s.startswith("if ") and s.endswith("then"):
+            depth += 1
+        elif depth > 0 and s == "fi":
+            depth -= 1
+            i += 1
+            if depth == 0:
+                break
+            continue
+        i += 1
+    tail = "".join(lines[i:])
+    merged = (before.rstrip() + "\n" + tail).replace("\n\n\n\n", "\n\n\n")
+    return merged
+
+
+def install_shell_shims() -> None:
+    """Append a universal `agent` shell function that delegates to ~/.wow-agent-hooks/va-agent-wrap.sh."""
+    body = shim_body().rstrip() + "\n"
+    home = Path.home()
+    for name in (".bashrc", ".zshrc"):
+        rc = home / name
+        if not rc.is_file():
+            continue
+        raw = rc.read_text(encoding="utf-8", errors="replace")
+        text = raw.replace("\r\n", "\n")
+        text = strip_legacy_voiceagent_block(text)
+        text = _strip_v2_shim_block(text)
+        if SHIM_MARKER in text:
+            rc.write_text(text, encoding="utf-8", newline="\n")
+            continue
+        new_text = text.rstrip() + "\n\n" + body
+        rc.write_text(new_text, encoding="utf-8", newline="\n")
+
+
+def uninstall_shell_shims() -> None:
+    home = Path.home()
+    for name in (".bashrc", ".zshrc"):
+        rc = home / name
+        if not rc.is_file():
+            continue
+        raw = rc.read_text(encoding="utf-8", errors="replace")
+        text = _strip_v2_shim_block(raw.replace("\r\n", "\n"))
+        text = strip_legacy_voiceagent_block(text)
+        rc.write_text(text, encoding="utf-8", newline="\n")
+
+
+def uninstall_va_agent_wrap() -> None:
+    p = installed_va_agent_wrap()
+    backup(p)
+    if p.exists():
+        p.unlink()
 
 
 def install_cursor_global_hooks(dispatcher: Path) -> None:
@@ -248,12 +382,16 @@ def uninstall_opencode_global_plugin() -> None:
 
 def status() -> int:
     d = installed_dispatcher()
+    wrap = installed_va_agent_wrap()
     cursor = cursor_hooks_path()
     claude = claude_settings_path()
     opencode = opencode_plugin_path()
     bundled = bundled_dispatcher()
+    bundled_wrap = bundled_va_agent_wrap()
     print(f"bundled dispatcher (repo): {bundled} ({'ok' if bundled.is_file() else 'missing'})")
+    print(f"bundled va-agent-wrap (repo): {bundled_wrap} ({'ok' if bundled_wrap.is_file() else 'missing'})")
     print(f"installed dispatcher: {d} ({'ok' if d.exists() else 'missing'})")
+    print(f"installed va-agent-wrap: {wrap} ({'ok' if wrap.exists() else 'missing'})")
     print(f"cursor hooks: {cursor} ({'ok' if cursor.exists() else 'missing'})")
     print(f"claude settings: {claude} ({'ok' if claude.exists() else 'missing'})")
     print(f"opencode plugin: {opencode} ({'ok' if opencode.exists() else 'missing'})")
@@ -276,19 +414,24 @@ def main() -> int:
 
     if args.cmd == "install":
         dispatcher = copy_bundled_dispatcher()
+        wrap_dst = copy_va_agent_wrap()
         install_cursor_global_hooks(dispatcher)
         install_claude_global_hooks(dispatcher)
         install_opencode_global_plugin()
+        install_shell_shims()
+        wrap_msg = f" + {wrap_dst}" if wrap_dst is not None else ""
         if opencode_template_path().is_file():
-            print("ok: installed global hooks (Cursor + Claude + OpenCode plugin)")
+            print(f"ok: installed global hooks (Cursor + Claude + OpenCode plugin){wrap_msg}")
         else:
-            print("ok: installed global hooks (Cursor + Claude); OpenCode template not bundled, skipped")
+            print(f"ok: installed global hooks (Cursor + Claude); OpenCode template not bundled, skipped{wrap_msg}")
         return 0
 
     if args.cmd == "uninstall":
         uninstall_cursor_global_hooks()
         uninstall_claude_global_hooks()
         uninstall_opencode_global_plugin()
+        uninstall_va_agent_wrap()
+        uninstall_shell_shims()
         print("ok: removed global hooks configuration (Cursor + Claude + OpenCode plugin if present)")
         return 0
 
