@@ -79,12 +79,32 @@ def read_stdin() -> str:
 
 
 def normalize_stdin_for_cursor(stdin: str) -> str:
+    """Align Cursor hook payloads with Claude-side expectations where safe.
+
+    Cursor often puts the shell working directory in ``tool_input.working_directory``
+    while also providing ``workspace_roots``; some scripts only read top-level ``cwd``.
+    We synthesize ``cwd`` when missing so downstream hooks resolve relative paths
+    consistently (especially sanitize-on-read for Shell).
+    """
     try:
         if not stdin.strip():
             return stdin
         data = json.loads(stdin)
     except json.JSONDecodeError:
         return stdin
+    if not isinstance(data, dict):
+        return stdin
+
+    tool_input = data.get("tool_input")
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+
+    roots = data.get("workspace_roots")
+    first_root = roots[0] if isinstance(roots, list) and roots else None
+    effective_cwd = data.get("cwd") or tool_input.get("working_directory") or first_root
+    if effective_cwd and not data.get("cwd"):
+        data = {**data, "cwd": effective_cwd}
+
     if "session_id" not in data and data.get("conversation_id"):
         data = {**data, "session_id": data["conversation_id"]}
     return json.dumps(data, ensure_ascii=False)
@@ -110,6 +130,24 @@ def resolve_repo_root() -> Path | None:
 
 def has_project_cursor_hooks(root: Path) -> bool:
     return (root / ".cursor" / "hooks.json").is_file()
+
+
+def _running_global_cursor_dispatcher() -> bool:
+    """True when this process is the user-level copy under ``~/.wow-agent-hooks/``."""
+    try:
+        return Path(__file__).resolve().parent == Path.home() / ".wow-agent-hooks"
+    except OSError:
+        return False
+
+
+def cursor_global_should_yield_to_project_hooks(root: Path) -> bool:
+    """Global autodispatch must noop when the repo already has project Cursor hooks.
+
+    When ``hooks.json`` invokes the **in-repo** ``scripts/install/wow_agent_dispatch.py``
+    (phase2 bundle), we must still run the bridge — only the **global** dispatcher
+    installed to ``~/.wow-agent-hooks/`` should yield to avoid double execution.
+    """
+    return _running_global_cursor_dispatcher() and has_project_cursor_hooks(root)
 
 
 def has_project_claude_hooks(root: Path) -> bool:
@@ -369,7 +407,7 @@ def main() -> None:
         _log_event(runtime, subcommand, mode="noop_no_wow")
         noop(runtime, subcommand)
 
-    if runtime == "cursor" and has_project_cursor_hooks(root):
+    if runtime == "cursor" and cursor_global_should_yield_to_project_hooks(root):
         _log_event(runtime, subcommand, mode="noop_project_override", root=root, detail="project .cursor/hooks.json present")
         noop(runtime, subcommand)
     if runtime == "claude" and has_project_claude_hooks(root):

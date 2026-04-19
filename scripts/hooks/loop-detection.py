@@ -52,11 +52,11 @@ def main():
         print(json.dumps({"decision": "allow"}))
         return
 
-    tool_name = event.get("tool_name", "")
+    tool_name = (event.get("tool_name") or "").strip()
     tool_input = event.get("tool_input", {})
 
-    # 只追踪 Write 和 Edit 操作
-    if tool_name not in ("Write", "Edit"):
+    # 只追踪 Write 和 Edit（兼容大小写；Cursor/Claude 通常 PascalCase）
+    if tool_name.lower() not in ("write", "edit"):
         print(json.dumps({"decision": "allow"}))
         return
 
