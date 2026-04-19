@@ -98,6 +98,11 @@
           },
           {
             "type": "command",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-start-harness-banner.py",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-start-magic-docs.py",
             "timeout": 10
           },

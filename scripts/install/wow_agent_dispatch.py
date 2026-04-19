@@ -23,6 +23,7 @@ CURSOR_SUBCOMMANDS = frozenset(
         "post-write-bundle",
         "post-tool-failure",
         "session-start-reset-risk",
+        "session-start-harness-banner",
         "session-start-magic-docs",
         "session-start-toolkit-reminder",
         "pre-compact",
@@ -45,6 +46,7 @@ CLAUDE_SUBCOMMANDS = frozenset(
         "post-risk-tracker",
         "post-tool-failure",
         "session-start-reset-risk",
+        "session-start-harness-banner",
         "session-start-magic-docs",
         "session-start-toolkit-reminder",
         "pre-compact",
@@ -205,8 +207,28 @@ def _log_event(runtime: str, subcommand: str, *, mode: str, root: Path | None = 
         pass
 
 
+def _append_visible_touch(root: Path, runtime: str, subcommand: str) -> None:
+    """Project-local JSONL + optional stderr trace so users see harness activity."""
+    try:
+        scripts_dir = Path(__file__).resolve().parent.parent
+        sd = str(scripts_dir)
+        if sd not in sys.path:
+            sys.path.insert(0, sd)
+        from lib.harness_visible import append_touch  # noqa: PLC0415
+
+        append_touch(root, runtime, subcommand)
+    except Exception:
+        pass
+    try:
+        if os.environ.get("WOW_HARNESS_STDERR_TRACE", "").strip().lower() in ("1", "true", "yes", "on"):
+            print(f"[wow-harness] {runtime} → {subcommand}", file=sys.stderr)
+    except Exception:
+        pass
+
+
 def run_cursor_bridge(root: Path, subcommand: str, stdin: str) -> None:
     _log_event("cursor", subcommand, mode="run_global_bridge", root=root)
+    _append_visible_touch(root, "cursor", subcommand)
     py = sys.executable
     if subcommand == "pre-sanitize":
         result = run_script(root, [py, str(script_path(root, "scripts/hooks/sanitize-on-read.py"))], stdin, 30)
@@ -293,8 +315,16 @@ def run_cursor_bridge(root: Path, subcommand: str, stdin: str) -> None:
         print("{}")
         return
 
-    if subcommand in {"session-start-magic-docs", "session-start-toolkit-reminder"}:
-        filename = "session-start-magic-docs.py" if subcommand == "session-start-magic-docs" else "session-start-toolkit-reminder.py"
+    if subcommand in {
+        "session-start-harness-banner",
+        "session-start-magic-docs",
+        "session-start-toolkit-reminder",
+    }:
+        filename = {
+            "session-start-harness-banner": "session-start-harness-banner.py",
+            "session-start-magic-docs": "session-start-magic-docs.py",
+            "session-start-toolkit-reminder": "session-start-toolkit-reminder.py",
+        }[subcommand]
         result = run_script(root, [py, str(script_path(root, f"scripts/hooks/{filename}"))], stdin, 15)
         parts = [x for x in ((result.stdout or "").strip(), (result.stderr or "").strip()) if x]
         if parts:
@@ -356,6 +386,7 @@ def run_cursor_bridge(root: Path, subcommand: str, stdin: str) -> None:
 
 def run_claude_bridge(root: Path, subcommand: str, stdin: str) -> None:
     _log_event("claude", subcommand, mode="run_global_bridge", root=root)
+    _append_visible_touch(root, "claude", subcommand)
     py = sys.executable
     mapping = {
         "pre-sanitize": [py, str(script_path(root, "scripts/hooks/sanitize-on-read.py"))],
@@ -368,6 +399,7 @@ def run_claude_bridge(root: Path, subcommand: str, stdin: str) -> None:
         "post-risk-tracker": [py, str(script_path(root, "scripts/hooks/risk-tracker.py"))],
         "post-tool-failure": [py, str(script_path(root, "scripts/hooks/failure-analyzer.py"))],
         "session-start-reset-risk": [py, str(script_path(root, "scripts/hooks/session-start-reset-risk.py"))],
+        "session-start-harness-banner": [py, str(script_path(root, "scripts/hooks/session-start-harness-banner.py"))],
         "session-start-magic-docs": [py, str(script_path(root, "scripts/hooks/session-start-magic-docs.py"))],
         "session-start-toolkit-reminder": [py, str(script_path(root, "scripts/hooks/session-start-toolkit-reminder.py"))],
         "pre-compact": ["bash", str(script_path(root, "scripts/hooks/precompact.sh"))],
