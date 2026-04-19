@@ -16,9 +16,11 @@ python3 scripts/install/wow_global_hooks.py install
 该命令会：
 
 1. 将 `scripts/install/wow_agent_dispatch.py` 复制到 `~/.wow-agent-hooks/wow_agent_dispatch.py`。
-2. 写入 `~/.cursor/hooks.json`（若已有则先备份为 `*.bak.<timestamp>`）。
-3. 合并写入 `~/.claude/settings.json` 的 `hooks` 字段（保留其它键如 `mcpServers`）。
-4. 若存在 `scripts/install/templates/wow-harness-autodispatch.js`，则安装到 `~/.config/opencode/plugins/wow-harness-autodispatch.js`。
+2. 将 `scripts/install/va-agent-wrap.sh` 复制到 `~/.wow-agent-hooks/va-agent-wrap.sh`（可执行），供下面第 5 步的 shell 包装调用。
+3. 写入 `~/.cursor/hooks.json`（若已有则先备份为 `*.bak.<timestamp>`）。
+4. 合并写入 `~/.claude/settings.json` 的 `hooks` 字段（保留其它键如 `mcpServers`）。
+5. 若存在 `scripts/install/templates/wow-harness-autodispatch.js`，则安装到 `~/.config/opencode/plugins/wow-harness-autodispatch.js`。
+6. 在 **`~/.bashrc` 与 `~/.zshrc`（若存在）** 末尾追加一段受管 shim：当 `~/.wow-agent-hooks/va-agent-wrap.sh` 可执行且当前 shell 里还没有名为 `agent` 的**函数**时，定义 `agent()`，把调用转发给该包装脚本。安装时会尽量删除旧的「仅 VoiceAgent」`_voiceagent_*` 块，避免重复包装。
 
 ## 卸载与状态
 
@@ -27,7 +29,7 @@ python3 scripts/install/wow_global_hooks.py status
 python3 scripts/install/wow_global_hooks.py uninstall
 ```
 
-卸载会备份后移除全局 Cursor hooks 文件、清空 Claude 的 `hooks` 键、删除 OpenCode 插件文件（若曾安装）。
+卸载会备份后移除全局 Cursor hooks 文件、清空 Claude 的 `hooks` 键、删除 OpenCode 插件文件（若曾安装）、删除 `~/.wow-agent-hooks/va-agent-wrap.sh`，并从 `~/.bashrc` / `~/.zshrc` 中移除受管 universal shim（以及残留的 VoiceAgent-only `_voiceagent_*` 块）。
 
 ## 分发器行为摘要
 
@@ -41,7 +43,7 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 **CLI `agent` 与 SessionStart**：`sessionStart` 的 `additional_context` 进入**模型上下文**，不会画在终端 ASCII 框里。
 
-**重要（已在本机用 `agent -p` + 分离重定向验证）**：Cursor **`agent` CLI 不会把 hook 子进程的 stderr 接到你的 TTY**；因此 `before-submit-harness-ping` / `session-start-harness-banner` 里写的 `stderr` **在纯 `agent` 交互界面里不可见**。要看治理链是否在跑，请用 **`.wow-harness/state/harness-visible.jsonl`**（`tail -f`），或在目标仓库使用 **启动包装脚本**（例如 VoiceAgent 的 `scripts/va-agent`：在 `exec agent` 前向 stderr 打印横幅）。
+**重要（已在本机用 `agent -p` + 分离重定向验证）**：Cursor **`agent` CLI 不会把 hook 子进程的 stderr 接到你的 TTY**；因此 `before-submit-harness-ping` / `session-start-harness-banner` 里写的 `stderr` **在纯 `agent` 交互界面里不可见**。要看治理链是否在跑，请用 **`.wow-harness/state/harness-visible.jsonl`**（`tail -f`），或在终端里通过 **`agent` 包装** 启动：`wow_global_hooks.py install` 会把 **`va-agent-wrap.sh`** 装到 `~/.wow-agent-hooks/`，并在 shell 里注册 `agent()`（仅当尚未存在同名**函数**时），从而对**任意 Git 仓库**生效——若仓库根存在 **`.wow-harness/MANIFEST.yaml`**，则在 `exec` 真实 `agent` 前向 stderr 打印横幅；若仓库另有可执行的 **`scripts/va-agent`**（例如 VoiceAgent），则**优先**走该脚本以便定制文案。找不到 Cursor CLI 时，可设置环境变量 **`WOW_AGENT_BIN`** 指向 `agent` 可执行文件。
 
 **全局 hooks 更新**：修改 `wow_global_hooks.py` 后必须重新执行 `python3 scripts/install/wow_global_hooks.py install`，否则 `~/.cursor/hooks.json` 仍是旧条目（会缺 `beforeSubmitPrompt` / `session-start-harness-banner`）。
 
