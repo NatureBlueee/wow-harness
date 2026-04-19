@@ -39,7 +39,11 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 **可见性**：每次经分发器**实际执行**仓库内脚本时，会在 `.wow-harness/state/harness-visible.jsonl` 追加一行 JSON（`runtime`、`hook`、时间）；新会话的 `session-start-harness-banner` 会在上下文里说明该文件与 `WOW_HARNESS_STDERR_TRACE` / `WOW_HARNESS_QUIET` 环境变量。
 
-**CLI `agent` 与 SessionStart**：`sessionStart` 的 `additional_context` 进入**模型上下文**，不会画在终端 ASCII 框里。要在 `agent` 里更明显，请启用 **`beforeSubmitPrompt`**（`before-submit-harness-ping`）：每条用户消息前在 **stderr** 打一行，并依赖同一 JSONL 打点。
+**CLI `agent` 与 SessionStart**：`sessionStart` 的 `additional_context` 进入**模型上下文**，不会画在终端 ASCII 框里。
+
+**重要（已在本机用 `agent -p` + 分离重定向验证）**：Cursor **`agent` CLI 不会把 hook 子进程的 stderr 接到你的 TTY**；因此 `before-submit-harness-ping` / `session-start-harness-banner` 里写的 `stderr` **在纯 `agent` 交互界面里不可见**。要看治理链是否在跑，请用 **`.wow-harness/state/harness-visible.jsonl`**（`tail -f`），或在目标仓库使用 **启动包装脚本**（例如 VoiceAgent 的 `scripts/va-agent`：在 `exec agent` 前向 stderr 打印横幅）。
+
+**全局 hooks 更新**：修改 `wow_global_hooks.py` 后必须重新执行 `python3 scripts/install/wow_global_hooks.py install`，否则 `~/.cursor/hooks.json` 仍是旧条目（会缺 `beforeSubmitPrompt` / `session-start-harness-banner`）。
 
 ## 与 `issue-adapter.yaml` 的关系
 
