@@ -31,6 +31,7 @@ L1_registry:
   - risk-tracker.py
   - sanitize-on-read.py
   - session-reflection.py
+  - session-start-harness-banner.py
   - session-start-magic-docs.py
   - session-start-reset-risk.py
   - session-start-toolkit-reminder.py
@@ -42,6 +43,7 @@ L1_registry:
   - deploy-guard.py
   - context_router.py
   - guard_router.py
+  - lib/harness_visible.py
 
 L2_registry:
   - check_api_types.py
@@ -88,6 +90,7 @@ settings_command_registry:
   - { stage: PreToolUse,         matcher: "Read|Bash",  script: scripts/hooks/sanitize-on-read.py,             timeout: 10 }
   - { stage: PreCompact,         matcher: "*",          script: scripts/hooks/precompact.sh,                    timeout: 5 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-reset-risk.py,      timeout: 3 }
+  - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-harness-banner.py,  timeout: 5 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-magic-docs.py,      timeout: 10 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-toolkit-reminder.py, timeout: 5 }
   - { stage: Stop,               matcher: "*",          script: scripts/hooks/stop-evaluator.py,                timeout: 10 }
@@ -113,10 +116,10 @@ rebaseline_triggers:
 # physical_files — WP-SEC-1 CI double-commit count assertion.
 #   WP-03 commit: 17 (15 hooks + 2 root scripts)
 #   WP-11 commit: 18 (+ install-wow-harness SKILL.md)
-#   post-audit: 20 (hooks + guard-feedback.py + deploy-guard.py; live count from count-components.sh)
+#   post-audit: 21 (hooks + guard-feedback.py + deploy-guard.py; live count from count-components.sh)
 # ---------------------------------------------------------------------------
 
-physical_files: 20
+physical_files: 21
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.

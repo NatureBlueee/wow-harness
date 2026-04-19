@@ -95,6 +95,7 @@ def install_cursor_global_hooks(dispatcher: Path) -> None:
         "hooks": {
             "sessionStart": [
                 {"command": f'python3 "{dispatcher}" cursor session-start-reset-risk', "timeout": 5},
+                {"command": f'python3 "{dispatcher}" cursor session-start-harness-banner', "timeout": 6},
                 {"command": f'python3 "{dispatcher}" cursor session-start-magic-docs', "timeout": 15},
                 {"command": f'python3 "{dispatcher}" cursor session-start-toolkit-reminder', "timeout": 10},
             ],
@@ -174,8 +175,9 @@ def install_claude_global_hooks(dispatcher: Path) -> None:
         "SessionStart": [
             {
                 "matcher": "*",
-                "hooks": [
+                    "hooks": [
                     {"type": "command", "command": f'python3 "{dispatcher}" claude session-start-reset-risk', "timeout": 3},
+                    {"type": "command", "command": f'python3 "{dispatcher}" claude session-start-harness-banner', "timeout": 5},
                     {"type": "command", "command": f'python3 "{dispatcher}" claude session-start-magic-docs', "timeout": 10},
                     {"type": "command", "command": f'python3 "{dispatcher}" claude session-start-toolkit-reminder', "timeout": 5},
                 ],

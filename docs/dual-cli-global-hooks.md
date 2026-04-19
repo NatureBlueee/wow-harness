@@ -37,6 +37,8 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 **项目内 hooks + 全局 hooks**：仅当本进程是安装在 `~/.wow-agent-hooks/wow_agent_dispatch.py` 的**全局**入口且仓库内已存在 `.cursor/hooks.json` 时才会 noop 让位。若 `hooks.json` 里调用的是**仓库自带的** `scripts/install/wow_agent_dispatch.py`（例如 phase2 安装后的项目），则必须照常执行桥接，否则会误 noop、整链失效。
 
+**可见性**：每次经分发器**实际执行**仓库内脚本时，会在 `.wow-harness/state/harness-visible.jsonl` 追加一行 JSON（`runtime`、`hook`、时间）；新会话的 `session-start-harness-banner` 会在上下文里说明该文件与 `WOW_HARNESS_STDERR_TRACE` / `WOW_HARNESS_QUIET` 环境变量。
+
 ## 与 `issue-adapter.yaml` 的关系
 
 若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`，则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。设为 `enabled: true` 则启用完整 context 路由与 guard 检查。
