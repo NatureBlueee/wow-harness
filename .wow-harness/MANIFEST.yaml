@@ -20,6 +20,7 @@ notes: >
 # ---------------------------------------------------------------------------
 
 L1_registry:
+  - before-submit-harness-ping.py
   - auto-python3.py
   - deploy-progress-on-session-end.py
   - failure-analyzer.py
@@ -192,10 +193,10 @@ vNext_plugin_registry:
 #                     + 17 H decisions + 1 .githooks/pre-commit = +29)
 #   vNext sync 2026-04-29: 71 (+ 5 review-toolkit + 11 mode-toolkit + 2 toolkit
 #                     skill + 1 review-base.yaml + 1 toolkit-index.yaml = +20)
-#   PR-9 rebase live hook/root count: 29 (count-components.sh)
+#   PR-9 rebase live hook/root count: 30 (count-components.sh)
 # ---------------------------------------------------------------------------
 
-physical_files: 29
+physical_files: 30
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.

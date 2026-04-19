@@ -99,6 +99,13 @@ def install_cursor_global_hooks(dispatcher: Path) -> None:
                 {"command": f'python3 "{dispatcher}" cursor session-start-magic-docs', "timeout": 15},
                 {"command": f'python3 "{dispatcher}" cursor session-start-toolkit-reminder', "timeout": 10},
             ],
+            "beforeSubmitPrompt": [
+                {
+                    "command": f'python3 "{dispatcher}" cursor before-submit-harness-ping',
+                    "matcher": "UserPromptSubmit",
+                    "timeout": 5,
+                }
+            ],
             "preToolUse": [
                 {"command": f'python3 "{dispatcher}" cursor pre-deploy-guard', "matcher": "Shell", "timeout": 15, "failClosed": False},
                 {"command": f'python3 "{dispatcher}" cursor pre-auto-python3', "matcher": "Shell", "timeout": 10},

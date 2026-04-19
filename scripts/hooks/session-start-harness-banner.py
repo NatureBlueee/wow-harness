@@ -38,11 +38,22 @@ def main() -> int:
 
 **本地查看**：`tail -f {rel}`
 
-**Cursor**：可在 **设置 → Hooks** 或 **Hooks** 输出通道看子进程日志；若需要每条 hook 在 stderr 再打一行短标记，可在环境里设 ``WOW_HARNESS_STDERR_TRACE=1``。
+**Cursor 终端 `agent`**：官方文档里 Agent hooks 主要对应 **Cmd+K / Agent Chat** 路径；`sessionStart` 注入的内容进**模型上下文**，**不会**画在你看到的 ASCII 欢迎框里。要在终端里更明显，请看 **stderr**（本脚本结束时会打一行）并依赖 **`beforeSubmitPrompt`** 钩子（`before-submit-harness-ping.py`，每条用户消息一次）。
+
+**Cursor 编辑器**：可在 **设置 → Hooks** 或 **Hooks** 输出通道看子进程 **stderr**；需要每条经分发器的 hook 再打 stderr 时，设 ``WOW_HARNESS_STDERR_TRACE=1``。
 
 **静默**：若不想写该文件，设 ``WOW_HARNESS_QUIET=1``。
 """
     print(banner.strip())
+    try:
+        print(
+            "[wow-harness] SessionStart：上文「本会话已激活」已写入模型上下文；"
+            "终端里若看不到表格属正常。活动日志: "
+            f"tail -f {rel}",
+            file=sys.stderr,
+        )
+    except OSError:
+        pass
     return 0
 
 

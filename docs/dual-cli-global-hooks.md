@@ -39,6 +39,8 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 **可见性**：每次经分发器**实际执行**仓库内脚本时，会在 `.wow-harness/state/harness-visible.jsonl` 追加一行 JSON（`runtime`、`hook`、时间）；新会话的 `session-start-harness-banner` 会在上下文里说明该文件与 `WOW_HARNESS_STDERR_TRACE` / `WOW_HARNESS_QUIET` 环境变量。
 
+**CLI `agent` 与 SessionStart**：`sessionStart` 的 `additional_context` 进入**模型上下文**，不会画在终端 ASCII 框里。要在 `agent` 里更明显，请启用 **`beforeSubmitPrompt`**（`before-submit-harness-ping`）：每条用户消息前在 **stderr** 打一行，并依赖同一 JSONL 打点。
+
 ## 与 `issue-adapter.yaml` 的关系
 
 若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`，则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。设为 `enabled: true` 则启用完整 context 路由与 guard 检查。
