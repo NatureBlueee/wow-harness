@@ -114,13 +114,21 @@ def _is_read_command(command: str) -> bool:
     return any(kw.lower() in cmd_lower for kw in BASH_READ_KEYWORDS)
 
 
-def _extract_paths_from_command(command: str) -> list[Path]:
-    """Best-effort extract file paths from a Bash read command."""
+def _extract_paths_from_command(command: str, base_dir: Path) -> list[Path]:
+    """Best-effort extract file paths from a Bash/Shell read command.
+
+    Relative tokens resolve against ``base_dir`` (agent shell cwd or workspace root),
+    which Cursor often supplies as ``cwd`` / ``tool_input.working_directory``.
+    """
     paths: list[Path] = []
     for token in command.split():
         if token.startswith("-"):
             continue
         candidate = Path(token)
+        if not candidate.is_absolute():
+            candidate = (base_dir / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
         if candidate.is_file():
             paths.append(candidate)
     return paths
@@ -158,7 +166,17 @@ def main() -> int:
         return 0
 
     tool_name = hook_input.get("tool_name", "")
-    tool_input = hook_input.get("tool_input", {})
+    tool_input = hook_input.get("tool_input") or {}
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+
+    roots = hook_input.get("workspace_roots") or []
+    first_root = roots[0] if isinstance(roots, list) and roots else None
+    raw_cwd = hook_input.get("cwd") or tool_input.get("working_directory") or first_root
+    try:
+        base_dir = Path(raw_cwd).resolve() if raw_cwd else Path.cwd()
+    except OSError:
+        base_dir = Path.cwd()
 
     # Determine what to scan
     file_path: Path | None = None
@@ -168,6 +186,8 @@ def main() -> int:
         raw_path = tool_input.get("file_path", "")
         if raw_path:
             file_path = Path(raw_path)
+            if not file_path.is_absolute():
+                file_path = (base_dir / file_path).resolve()
             scan_paths = [file_path]
 
     elif tool_name in ("Bash", "Shell"):
@@ -175,7 +195,7 @@ def main() -> int:
         if not _is_read_command(command):
             _output_decision("approve")
             return 0
-        scan_paths = _extract_paths_from_command(command)
+        scan_paths = _extract_paths_from_command(command, base_dir)
         if not scan_paths:
             # Command is read-like but we can't extract file paths
             # (e.g. piped commands) — allow, we can't pre-scan output

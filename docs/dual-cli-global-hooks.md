@@ -33,6 +33,10 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 `wow_agent_dispatch.py` 从 `CURSOR_PROJECT_DIR` / `CLAUDE_PROJECT_DIR` 或当前目录向上查找 `.wow-harness/MANIFEST.yaml`，解析出项目根后，在子进程中执行该项目内的 `scripts/hooks/*.py` 等。调试日志（尽力而为）写在 `~/.wow-agent-hooks/logs/dispatch.jsonl`。
 
+**Cursor stdin 归一**：全局入口在把 JSON 交给子脚本前会补全缺失的顶层 `cwd`（优先已有 `cwd`，否则 `tool_input.working_directory`，再否则 `workspace_roots[0]`），并把 `conversation_id` 复制为 `session_id`，以便与 Claude 侧脚本对路径与会话字段的假设一致。
+
+**项目内 hooks + 全局 hooks**：仅当本进程是安装在 `~/.wow-agent-hooks/wow_agent_dispatch.py` 的**全局**入口且仓库内已存在 `.cursor/hooks.json` 时才会 noop 让位。若 `hooks.json` 里调用的是**仓库自带的** `scripts/install/wow_agent_dispatch.py`（例如 phase2 安装后的项目），则必须照常执行桥接，否则会误 noop、整链失效。
+
 ## 与 `issue-adapter.yaml` 的关系
 
 若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`，则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。设为 `enabled: true` 则启用完整 context 路由与 guard 检查。
