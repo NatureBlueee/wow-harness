@@ -6,12 +6,16 @@
 !.wow-harness/metrics/.gitkeep
 .wow-harness/proposals/*
 !.wow-harness/proposals/.gitkeep
+.wow-harness/state/*
+.wow-harness/state/**
 .wow-harness/guard/*
 !.wow-harness/guard/.gitkeep
 .wow-harness/active-review-agents/*
 !.wow-harness/active-review-agents/.gitkeep
 .wow-harness/tasks/*
 !.wow-harness/tasks/.gitkeep
+.towow/*
+.towow/**
 .wow-harness/install-log.jsonl
 .wow-harness/install-trust-token.json
 .wow-harness/trust-status.json

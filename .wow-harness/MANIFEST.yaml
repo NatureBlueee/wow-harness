@@ -106,6 +106,8 @@ settings_command_registry:
 # ---------------------------------------------------------------------------
 
 rebaseline_triggers:
+  - AGENTS.md
+  - .claude/agents/codex-dev.md
   - .wow-harness/MANIFEST.yaml
   - .wow-harness/issue-adapter.yaml
   - .wow-harness/deploy-allowlist.yaml
