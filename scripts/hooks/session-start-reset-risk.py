@@ -12,15 +12,17 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-RISK_SNAPSHOT = (
-    Path(__file__).resolve().parent.parent.parent
-    / ".towow" / "state" / "risk-snapshot.json"
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+RISK_SNAPSHOTS = (
+    REPO_ROOT / ".wow-harness" / "state" / "risk-snapshot.json",
+    REPO_ROOT / ".towow" / "state" / "risk-snapshot.json",
 )
 
 
 def main() -> int:
-    if RISK_SNAPSHOT.exists():
-        RISK_SNAPSHOT.unlink()
+    for risk_snapshot in RISK_SNAPSHOTS:
+        if risk_snapshot.exists():
+            risk_snapshot.unlink()
     return 0
 
 

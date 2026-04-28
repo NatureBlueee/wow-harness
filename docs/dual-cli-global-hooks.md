@@ -1,9 +1,10 @@
-# Claude Code + Cursor CLI：全局 hooks 与项目级 hooks
+# Claude Code + Cursor CLI + Codex：全局 hooks 与项目级 hooks
 
 ## 目标
 
 - **任意工作区**只要检出过 wow-harness（存在 `.wow-harness/MANIFEST.yaml`），即可在 **不提交** `~/.cursor` 到该仓库的前提下，让 **Cursor CLI** 与 **Claude Code** 走同一套生命周期脚本。
 - **项目已自带** `.cursor/hooks.json` 或 `.claude/settings.json` 里的 `hooks` 时，全局层 **自动让位**，避免同一事件跑两遍。
+- **Codex** 通过仓根 `AGENTS.md` 获取同一套项目约束。当前不为 Codex 增加 router hook；这是 ADR-041 的显式边界。
 
 ## 安装
 
@@ -50,6 +51,17 @@ python3 scripts/install/wow_global_hooks.py uninstall
 ## 与 `issue-adapter.yaml` 的关系
 
 若项目内 `.wow-harness/issue-adapter.yaml` 中 `enabled: false`，则 `scripts/guard-feedback.py` 对 **PostToolUse** 路径为纯 no-op（不注入 fragment、不跑 guard）。全局分发器仍会调用 `guard-feedback.py`，但脚本会立即退出；其它 hook 不受影响。设为 `enabled: true` 则启用完整 context 路由与 guard 检查。
+
+## Codex 路径
+
+Codex 侧集成是指令级而非 hook 级：
+
+1. 安装器会复制仓根 `AGENTS.md` 到目标项目。
+2. `AGENTS.md` 只包含 Codex 必须知道的项目约束、适合分流的任务和红线。
+3. Claude 侧通过 `.claude/agents/codex-dev.md` 把 Codex 作为执行类 agent 目标使用。
+4. Codex 不参与 Gate 2/4/6/8 的独立审查；它只负责实现。
+
+如果未来要给 Codex 增加真实生命周期 hook，必须先写新的 ADR supersede ADR-041，不能直接把 router 逻辑塞进现有分发器。
 
 ## 参考
 
