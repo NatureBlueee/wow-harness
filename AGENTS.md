@@ -17,6 +17,9 @@ agents follow mechanical constraints instead of relying only on prompts.
   mandatory state machine.
 - Review/audit/evaluator work must stay independent from implementation work.
   Codex is an execution lane, not a final reviewer for Gate 2/4/6/8.
+- Codex has no wow-harness lifecycle hook in this repo. Before claiming
+  completion after edits, run:
+  `python3 scripts/codex/wow_codex_check.py --strict`
 - Commit messages for this project are bilingual and include:
   `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`.
 
@@ -46,6 +49,7 @@ Do not route these to Codex without explicit human direction:
 Prefer local, mechanical verification before claiming completion:
 
 - `PYTHONPYCACHEPREFIX=/tmp/wow-harness-pycache python3 -m compileall -q scripts`
+- `python3 scripts/codex/wow_codex_check.py --strict`
 - `bash scripts/ci/count-components.sh`
 - `python3 scripts/ci/scan_verify_artifacts.py --claims`
 - `python3 scripts/ci/detect_rebaseline_triggers.py`

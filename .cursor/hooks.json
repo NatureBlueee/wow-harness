@@ -7,12 +7,23 @@
         "timeout": 5
       },
       {
+        "command": "python3 scripts/cursor/wow_cursor_bridge.py session-start-harness-banner",
+        "timeout": 6
+      },
+      {
         "command": "python3 scripts/cursor/wow_cursor_bridge.py session-start-magic-docs",
         "timeout": 15
       },
       {
         "command": "python3 scripts/cursor/wow_cursor_bridge.py session-start-toolkit-reminder",
         "timeout": 10
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "python3 scripts/cursor/wow_cursor_bridge.py before-submit-harness-ping",
+        "matcher": "UserPromptSubmit",
+        "timeout": 5
       }
     ],
     "preToolUse": [

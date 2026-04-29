@@ -41,12 +41,17 @@ RISK_ELEVATORS: list[tuple[str, str]] = [
 
     # R3: governance / hooks / CI / security
     ("CLAUDE.md", "R3"),
+    ("AGENTS.md", "R3"),
+    (".wow-harness/", "R3"),
     (".claude/settings.json", "R3"),
     (".claude/skills/", "R3"),
     (".claude/rules/", "R3"),
     (".claude/agents/", "R3"),
+    (".cursor/", "R3"),
+    (".opencode/", "R3"),
     ("scripts/hooks/", "R3"),
     ("scripts/checks/", "R3"),
+    ("scripts/install/", "R3"),
     (".github/", "R3"),
 
     # R2: public contracts

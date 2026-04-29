@@ -128,6 +128,12 @@ python3 scripts/install/wow_global_hooks.py install
 
 说明见 [docs/dual-cli-global-hooks.md](docs/dual-cli-global-hooks.md)。
 
+诊断 Claude Code、Cursor、OpenCode、Codex 四条路径的接入状态：
+
+```bash
+python3 scripts/install/wow_runtime_doctor.py
+```
+
 ### OpenCode 实验性 PoC
 
 本仓库现在带有一套 OpenCode 兼容性验证 PoC：
@@ -137,7 +143,13 @@ python3 scripts/install/wow_global_hooks.py install
 - 项目配置：`opencode.json`
 - 说明文档：[docs/opencode-poc.md](docs/opencode-poc.md)
 
-当前 PoC 的范围刻意收窄：session 启动准备、`.env` 读取净化、编辑后的风险快照、compact 延续提醒、停止时的完成提案，以及只读 reviewer 隔离。它证明 wow-harness 可以接到另一个 agent runtime 上；还不声称已经和 Claude Code 侧完整等价。
+当前 PoC 的范围刻意收窄：session 启动准备、`.env` 读取净化、编辑后的风险快照、编辑后的 guard/context 反馈、compact 延续提醒、停止时的完成提案，以及只读 reviewer 隔离。它证明 wow-harness 可以接到另一个 agent runtime 上；还不声称已经和 Claude Code 侧完整等价。
+
+Codex 按 ADR-041 仍是指令优先路径；改动后用显式机械检查补足 hook 缺口：
+
+```bash
+python3 scripts/codex/wow_codex_check.py --strict
+```
 
 ## 设计原则
 

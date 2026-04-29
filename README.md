@@ -128,6 +128,12 @@ python3 scripts/install/wow_global_hooks.py install
 
 Details: [docs/dual-cli-global-hooks.md](docs/dual-cli-global-hooks.md).
 
+To diagnose runtime parity across Claude Code, Cursor, OpenCode, and Codex:
+
+```bash
+python3 scripts/install/wow_runtime_doctor.py
+```
+
 ### Experimental OpenCode PoC
 
 This repo now includes an experimental OpenCode compatibility proof-of-concept:
@@ -137,7 +143,13 @@ This repo now includes an experimental OpenCode compatibility proof-of-concept:
 - Project config: `opencode.json`
 - Notes: [docs/opencode-poc.md](docs/opencode-poc.md)
 
-Current PoC scope is intentionally narrow: session bootstrap, `.env` read sanitization, post-edit risk snapshots, compaction reminders, stop-time completion proposals, and read-only reviewer isolation. It proves wow-harness can attach to another agent runtime; it does not claim full Claude Code parity yet.
+Current PoC scope is intentionally narrow: session bootstrap, `.env` read sanitization, post-edit risk snapshots, post-edit guard/context feedback, compaction reminders, stop-time completion proposals, and read-only reviewer isolation. It proves wow-harness can attach to another agent runtime; it does not claim full Claude Code parity yet.
+
+Codex remains instruction-first by ADR-041, so use the explicit mechanical check after edits:
+
+```bash
+python3 scripts/codex/wow_codex_check.py --strict
+```
 
 ## Design Principles
 

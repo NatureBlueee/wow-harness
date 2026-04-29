@@ -22,8 +22,10 @@ _SUBCOMMANDS = frozenset(
         "post-write-bundle",
         "post-tool-failure",
         "session-start-reset-risk",
+        "session-start-harness-banner",
         "session-start-magic-docs",
         "session-start-toolkit-reminder",
+        "before-submit-harness-ping",
         "pre-compact",
         "stop-evaluator",
         "session-end-reflection",
@@ -34,13 +36,23 @@ _SUBCOMMANDS = frozenset(
 
 
 def normalize_stdin_for_cc(stdin: str) -> str:
-    """Cursor uses conversation_id; some wow-harness scripts still expect session_id."""
+    """Align Cursor payloads with Claude-side hook assumptions where safe."""
     try:
         if not stdin.strip():
             return stdin
         data = json.loads(stdin)
     except json.JSONDecodeError:
         return stdin
+    if not isinstance(data, dict):
+        return stdin
+    tool_input = data.get("tool_input")
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+    roots = data.get("workspace_roots")
+    first_root = roots[0] if isinstance(roots, list) and roots else None
+    effective_cwd = data.get("cwd") or tool_input.get("working_directory") or first_root
+    if effective_cwd and not data.get("cwd"):
+        data = {**data, "cwd": effective_cwd}
     if "session_id" not in data and data.get("conversation_id"):
         data = {**data, "session_id": data["conversation_id"]}
     return json.dumps(data, ensure_ascii=False)
@@ -70,6 +82,28 @@ def _run(root: Path, argv: list[str], stdin: str, *, timeout: int | None = None)
         cwd=str(root),
         timeout=timeout,
     )
+
+
+def _append_visible_touch(root: Path, subcommand: str) -> None:
+    try:
+        if str(root) not in sys.path:
+            sys.path.insert(0, str(root))
+        from scripts.lib.harness_visible import append_touch  # noqa: PLC0415
+
+        append_touch(root, "cursor", subcommand)
+    except Exception:
+        pass
+
+
+def cmd_before_submit_harness_ping(root: Path, stdin: str) -> None:
+    script = root / "scripts" / "hooks" / "before-submit-harness-ping.py"
+    result = _run(root, [sys.executable, str(script)], stdin, timeout=5)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    else:
+        print("{}")
 
 
 def cmd_pre_sanitize(root: Path, stdin: str) -> None:
@@ -239,6 +273,7 @@ def main() -> None:
     root = resolve_repo_root()
     os.chdir(root)
     stdin = normalize_stdin_for_cc(sys.stdin.read())
+    _append_visible_touch(root, subcommand)
 
     if subcommand == "pre-sanitize":
         cmd_pre_sanitize(root, stdin)
@@ -254,9 +289,13 @@ def main() -> None:
         cmd_post_write_bundle(root, stdin)
     elif subcommand == "post-tool-failure":
         cmd_post_tool_failure(root, stdin)
+    elif subcommand == "before-submit-harness-ping":
+        cmd_before_submit_harness_ping(root, stdin)
     elif subcommand == "session-start-reset-risk":
         subprocess.run([sys.executable, str(root / "scripts" / "hooks" / "session-start-reset-risk.py")], cwd=str(root), timeout=10)
         print("{}")
+    elif subcommand == "session-start-harness-banner":
+        cmd_session_start_fragment(root, stdin, "session-start-harness-banner.py")
     elif subcommand == "session-start-magic-docs":
         cmd_session_start_fragment(root, stdin, "session-start-magic-docs.py")
     elif subcommand == "session-start-toolkit-reminder":

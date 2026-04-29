@@ -36,6 +36,9 @@ Current behavior:
 - resets `risk-snapshot.json` on `session.created`
 - blocks `.env` reads through `tool.execute.before`
 - updates `risk-snapshot.json` after `edit` / `write`
+- runs `scripts/guard-feedback.py` after `edit` / `write` / `apply_patch` / `multiedit`
+- records latest feedback under `.wow-harness/state/logs/opencode-latest-feedback.md`
+- prompts the active OpenCode session with guard/context feedback when the session id is available
 - appends lightweight session and guard metrics JSONL files
 - injects wow-harness continuation reminders into compaction
 - **stop hook** (`stop`): generates `completion-proposal.json`, blocks completion when:
@@ -70,7 +73,7 @@ This PoC does **not** yet provide full parity for:
 - transcript-aware completion proposal generation
 - review-agent active marker tracking
 - deploy guard parity
-- full context-router / guard-router injection logic
+- full Claude Code output-schema parity for every hook event
 - installer support for `.opencode/*`
 
 ## Suggested next steps
@@ -84,7 +87,7 @@ This PoC does **not** yet provide full parity for:
 4. Add smoke tests that simulate:
    - `session.created`
    - `tool.execute.before` on `.env`
-   - `tool.execute.after` on `edit`
+   - `tool.execute.after` on `edit` / `write` / `apply_patch`
    - compaction context injection
    - `stop` hook generating completion proposal and blocking incomplete work
 
