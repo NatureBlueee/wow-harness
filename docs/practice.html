@@ -164,7 +164,7 @@
 
   <h1>wow-harness 在 Towow 的实践</h1>
   <p class="lead">两张图 / 一份速查表 — harness 当前真实在跑的样子。</p>
-  <p class="meta">53 天 · 1137 commits · 93 万行 · 1992 测试 · 一个人 + AI 全自主交付</p>
+  <p class="meta">98 天 · 2058 commits · 76 万行 · 2100+ 测试 · 一个人 + AI 全自主交付</p>
 
   <!-- ============ 图 1 ============ -->
   <h2><span class="num">图 1</span>你说一句话，AI 自己干完 8 关</h2>
@@ -246,67 +246,67 @@
 
 
   <!-- ============ 图 2 ============ -->
-  <h2><span class="num">图 2</span>三层 harness（v1 → v2 → v3）</h2>
+  <h2><span class="num">图 2</span>三层 harness — 每层在解决什么问题</h2>
 
   <div class="stack">
 
     <div class="layer v3">
-      <div class="lname">v3 · 兜底治理</div>
-      <div class="ltitle">H 系列（hanis）— harness 自己出问题谁来修</div>
+      <div class="lname">v3 · 自治层</div>
+      <div class="ltitle">解决：harness 自己跑出 bug 时谁来修 harness（修问题反而引入问题）</div>
       <div class="lcomps">
         <div class="comp">
-          <div class="ct">H0 元规约</div>
-          <div class="cd">6+1 条款 · Nature 单签 · 不引用未来产物</div>
+          <div class="ct">改 harness 时不许重现自己要修的症状</div>
+          <div class="cd">H0 元规约 6+1 条款 · 修过度 review 的 PR 不许过度 review · grep 反查 · Nature 单签</div>
         </div>
         <div class="comp">
-          <div class="ct">H9 多窗口邮箱</div>
-          <div class="cd">取代人脑协调员 · 文件 + 5 hook</div>
+          <div class="ct">多窗口并行不靠人手当中转</div>
+          <div class="cd">H9 文件邮箱 · 子窗口写 markdown 消息 → 主窗口启动 hook 自动注入到 prompt · 5 个 hook 保证不丢/不重</div>
         </div>
         <div class="comp">
-          <div class="ct">H1 学习层复活</div>
-          <div class="cd">crystal-learn 周期触发 · 8 条不变量</div>
+          <div class="ct">同样的坑不踩第二次</div>
+          <div class="cd">H1 crystal-learn · 真实事故 → 提取成不变量 → 注入回执行层 skill · 8 条已落地</div>
         </div>
         <div class="comp">
-          <div class="ct">H2-H8</div>
-          <div class="cd">身份隔离 · 记忆分段 · prompt 治理 · Gate 量纲化 · 状态健康度 · 文档合规</div>
+          <div class="ct">编号撞 / 记忆涨爆 / 状态文件漂移 / 文档脱节</div>
+          <div class="cd">H2-H8 · 身份段独立 · MEMORY 主索引 ≤200 行 · ADR-INDEX 自指过滤 · open issue ≤80 等硬指标</div>
         </div>
       </div>
     </div>
 
-    <div class="stackjoin">↑ 升级</div>
+    <div class="stackjoin">↑ 当 v1+v2 自己跑出问题</div>
 
     <div class="layer v2">
-      <div class="lname">v2 · 能力层</div>
-      <div class="ltitle">vNext — 生命周期 + 契约</div>
+      <div class="lname">v2 · 阶段化层</div>
+      <div class="ltitle">解决：AI 不知道当前在哪个阶段，工具权限一直全开</div>
       <div class="lcomps">
         <div class="comp">
-          <div class="ct">mode-toolkit</div>
-          <div class="cd">/mode plan → build → verify → release · 每个阶段 deny / defer / ask / allow 哪些工具</div>
+          <div class="ct">阶段切换自动收/放权</div>
+          <div class="cd">/mode plan → build → verify → release · plan 阶段 AI 只读不写 / build 阶段才解锁 Edit / verify 阶段强制看 evidence</div>
         </div>
         <div class="comp">
-          <div class="ct">review-toolkit</div>
-          <div class="cd">reviewer subagent + verify-gate hook + review-contract.yaml · 契约驱动 spawn</div>
+          <div class="ct">审查标准写在契约里不在提示词里漂</div>
+          <div class="cd">review-contract.yaml 锁死「谁审什么 / 要什么证据 / 什么标准算通过」· verify-gate hook 在 Stop 时校验 evidence packet</div>
         </div>
       </div>
     </div>
 
-    <div class="stackjoin">↑ 基底</div>
+    <div class="stackjoin">↑ 当 v1 还不够</div>
 
     <div class="layer v1">
-      <div class="lname">v1 · 机械化基底</div>
-      <div class="ltitle">wow-harness — 18 hooks + 16 skills + 15 checks</div>
+      <div class="lname">v1 · 物理拦截层</div>
+      <div class="ltitle">解决：AI 写规则但不听规则（CLAUDE.md 遵从率仅 ~20%）</div>
       <div class="lcomps">
         <div class="comp">
-          <div class="ct">18 hooks</div>
-          <div class="cd">7 个生命周期阶段 · 动作发生那一刻物理拦截</div>
+          <div class="ct">想做错事就在动作那一刻挡下</div>
+          <div class="cd">18 hooks · 想 rm -rf？想 push 到生产？想跳测试？想暗中改审查 AI？hook 直接 exit 2 物理阻断</div>
         </div>
         <div class="comp">
-          <div class="ct">16 skills</div>
-          <div class="cd">lead / arch / dev / reviewer / crystal-learn / skill-discovery / plan-lock ...</div>
+          <div class="ct">把 AI 拆成各司其职的角色</div>
+          <div class="cd">16 skills · lead 锁问题不写代码 / arch 出方案不实现 / dev 实现不审查 / reviewer 物理无写权 — 单 AI 干所有事必出错</div>
         </div>
         <div class="comp">
-          <div class="ct">15 checks</div>
-          <div class="cd">规则 / 编号 / IO schema 自动验证</div>
+          <div class="ct">不靠 AI 记规则，靠脚本自动验</div>
+          <div class="cd">15 checks · 撞 ADR 编号 / 引用错文件路径 / hook IO 不合规 — git pre-commit 拒提交，不靠人记</div>
         </div>
       </div>
     </div>
