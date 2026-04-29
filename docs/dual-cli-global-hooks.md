@@ -4,7 +4,7 @@
 
 - **任意工作区**只要检出过 wow-harness（存在 `.wow-harness/MANIFEST.yaml`），即可在 **不提交** `~/.cursor` 到该仓库的前提下，让 **Cursor CLI** 与 **Claude Code** 走同一套生命周期脚本。
 - **项目已自带** `.cursor/hooks.json` 或 `.claude/settings.json` 里的 `hooks` 时，全局层 **自动让位**，避免同一事件跑两遍。
-- **Codex** 通过仓根 `AGENTS.md` 获取同一套项目约束。当前不为 Codex 增加 router hook；这是 ADR-041 的显式边界。
+- **Codex** 通过仓根 `AGENTS.md` 获取项目约束，并通过 `.codex/hooks.json` 获取 advisory 生命周期反馈。ADR-045 只放开反馈 hook，不放开 router 或审查权。
 
 ## 为什么 Claude Code 体感更好？
 
@@ -13,13 +13,13 @@ Claude Code 有原生生命周期 hook，`SessionStart` / `PreToolUse` / `PostTo
 
 1. Cursor CLI/Agent 的 hook 覆盖和终端可见性不等同于 Claude Code；很多提示进模型上下文，不一定画在终端 UI。
 2. OpenCode 有 plugin hook，但需要显式把 wow-harness 的 Python guard/context 链接回会话。
-3. Codex 在 ADR-041 下是执行通道，不安装 router hook；它必须用显式机械检查补足完成前反馈。
+3. Codex 过去只有指令和显式检查；现在官方 project hooks 可以接 `SessionStart` / `PreToolUse` / `PostToolUse` / `Stop`，所以本仓库用 ADR-045 加了一层 advisory feedback。
 
 因此本仓库提供三条补偿路径：
 
 - Cursor：项目 `.cursor/hooks.json` 和全局 dispatcher 都写 `.wow-harness/state/harness-visible.jsonl`，并通过 `beforeSubmitPrompt` / `sessionStart` 打点。
 - OpenCode：项目插件与全局 autodispatch 插件在写文件后调用 `scripts/guard-feedback.py`，记录 latest feedback，并在可取得 session id 时用 OpenCode SDK 回填会话。
-- Codex：运行 `python3 scripts/codex/wow_codex_check.py --strict`，对当前 git 改动执行路径风险、context fragment、guard findings 检查。
+- Codex：项目 `.codex/hooks.json` 调 `scripts/codex/wow_codex_hook.py`，把 session context、Bash guardrail、post-edit feedback、Stop 检查送回 Codex；手动 fallback 仍是 `python3 scripts/codex/wow_codex_check.py --strict`。
 
 快速诊断：
 
@@ -75,15 +75,16 @@ python3 scripts/install/wow_global_hooks.py uninstall
 
 ## Codex 路径
 
-Codex 侧集成是指令级而非 hook 级：
+Codex 侧集成是“指令 + 官方 project hooks”，但不是 router：
 
-1. 安装器会复制仓根 `AGENTS.md` 到目标项目。
+1. 安装器会复制仓根 `AGENTS.md` 与 `.codex/` 到目标项目。
 2. `AGENTS.md` 只包含 Codex 必须知道的项目约束、适合分流的任务和红线。
 3. Claude 侧通过 `.claude/agents/codex-dev.md` 把 Codex 作为执行类 agent 目标使用。
 4. Codex 不参与 Gate 2/4/6/8 的独立审查；它只负责实现。
-5. Codex 改完文件后运行 `python3 scripts/codex/wow_codex_check.py --strict`，把 Claude Code 原本由 PostToolUse 提供的 context/guard 反馈变成显式命令。
+5. Codex project hooks 在 `.codex/config.toml` 开启后生效：`SessionStart` 注入上下文，`PreToolUse` 拦危险 Bash，`PostToolUse` 处理 `apply_patch` 后的 guard/context feedback，`Stop` 跑 `wow_codex_check.py --strict`。
+6. 若项目 `.codex/` layer 未被信任，Codex 改完文件后手动运行 `python3 scripts/codex/wow_codex_check.py --strict`。
 
-如果未来要给 Codex 增加真实生命周期 hook，必须先写新的 ADR supersede ADR-041，不能直接把 router 逻辑塞进现有分发器。
+ADR-045 是 ADR-041 的有限 supersede：允许 advisory lifecycle hooks；仍禁止 Codex router、Gate reviewer、强制分流状态机。
 
 ## 参考
 

@@ -9,7 +9,7 @@ Sequence:
   3. Resolve tier policy (drop-in / adapt / mine)
   4. Resolve project list (current / global / explicit naming)
   5. For each project:
-     a. Copy bundle staging → .claude/ (dry-run or real)
+     a. Copy bundle staging → .claude/.codex/.wow-harness/scripts/schemas (dry-run or real)
      b. Atomic append 1 PreToolUse Read|Bash matcher to settings.json (15→16)
         - MUST use json library, FORBIDDEN to use sed/textual edit
         - Idempotent: if matcher already exists, skip
@@ -83,7 +83,7 @@ def _check_trust_status(project_root: Path, accept_degraded: bool) -> bool:
 
 
 # Bundle directories/files to copy to target project
-BUNDLE_DIRS = [".claude", ".wow-harness", "scripts", "schemas"]
+BUNDLE_DIRS = [".claude", ".codex", ".wow-harness", "scripts", "schemas"]
 BUNDLE_FILES = ["AGENTS.md"]
 # Files/dirs to exclude from bundle copy (install-specific, not needed in target)
 BUNDLE_EXCLUDE = {
@@ -95,7 +95,7 @@ BUNDLE_EXCLUDE = {
 def _copy_bundle(target_root: Path, dry_run: bool = False) -> bool:
     """Step 5a: copy bundle dirs/files from wow-harness to target project.
 
-    Copies .claude/, .wow-harness/, scripts/, schemas/, and AGENTS.md to target.
+    Copies .claude/, .codex/, .wow-harness/, scripts/, schemas/, and AGENTS.md to target.
     Idempotent: only copies files that don't exist or are older.
     Returns True if any files were copied.
     """
@@ -426,7 +426,7 @@ def main() -> int:
         action = "would copy" if args.dry_run else "copied"
         bundle_copied = _copy_bundle(project_root, dry_run=args.dry_run)
         if bundle_copied:
-            print(f"  {action} bundle files (AGENTS.md .claude/ .wow-harness/ scripts/ schemas/)")
+            print(f"  {action} bundle files (AGENTS.md .claude/ .codex/ .wow-harness/ scripts/ schemas/)")
             if not args.dry_run:
                 _log_event(project_root, "bundle_copied", f"tier={args.tier}")
         else:

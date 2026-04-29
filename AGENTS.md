@@ -12,13 +12,15 @@ agents follow mechanical constraints instead of relying only on prompts.
 - Treat `README.md`, `README.zh-CN.md`, `CLAUDE.md`, `.wow-harness/MANIFEST.yaml`,
   and `docs/decisions/*.md` as the main truth sources.
 - Keep user-facing project documentation bilingual when touching public docs.
-- Do not add new Codex router hooks unless a new ADR explicitly supersedes
-  ADR-041. Codex integration is preference and delegation first, not another
-  mandatory state machine.
+- ADR-045 supersedes ADR-041 only for advisory Codex lifecycle hooks
+  (`.codex/hooks.json`). Do not add Codex router hooks or review authority.
+  Codex integration is preference, delegation, and runtime feedback first,
+  not another mandatory state machine.
 - Review/audit/evaluator work must stay independent from implementation work.
   Codex is an execution lane, not a final reviewer for Gate 2/4/6/8.
-- Codex has no wow-harness lifecycle hook in this repo. Before claiming
-  completion after edits, run:
+- Codex has advisory wow-harness lifecycle hooks when the project `.codex/`
+  layer is trusted. If hooks are unavailable or before claiming completion
+  after edits, run:
   `python3 scripts/codex/wow_codex_check.py --strict`
 - Commit messages for this project are bilingual and include:
   `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`.

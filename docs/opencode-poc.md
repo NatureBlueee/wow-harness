@@ -18,7 +18,7 @@ OpenCode exposes the primitives that wow-harness needs most:
 - session events such as `session.created`, `session.idle`, `session.compacted`
 - compaction hook: `experimental.session.compacting`
 - project-level agents in `.opencode/agents/`
-- per-agent permissions in `opencode.json`
+- project and per-agent permissions in `opencode.json`
 
 This makes it a strong candidate for proving that wow-harness is a reusable governance layer, not just a Claude Code add-on.
 
@@ -62,6 +62,7 @@ File: `opencode.json`
 
 Current behavior:
 
+- top-level permissions deny secret reads/writes, make Bash ask by default, allow common repo inspection and verification commands
 - `build` may call `general`, `explore`, and ask before invoking `wow-reviewer`
 - `plan` is explicitly restricted to non-editing, inspection-oriented bash commands
 

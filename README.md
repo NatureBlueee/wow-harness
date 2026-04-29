@@ -6,7 +6,7 @@
 
 This is the answer.
 
-wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), with companion instructions for Codex and global hook dispatch for Cursor / Claude / OpenCode. It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
+wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), with Codex project hooks and global hook dispatch for Cursor / Claude / OpenCode. It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
 
 ## The Problem
 
@@ -82,7 +82,7 @@ Each skill has `{{PLACEHOLDER}}` structural slots designed to be filled with you
 
 ### Codex lane
 
-Codex is integrated as a bounded execution lane, not as a new review authority. `AGENTS.md` carries the Codex-readable project rules, and `.claude/agents/codex-dev.md` gives Claude a concrete delegation target for mechanical implementation work such as batch refactors, tests, docs, shell scripts, and CI checks. ADR-041 intentionally avoids adding a Codex router hook; the default is human/Claude judgment first, then lightweight delegation.
+Codex is integrated as a bounded execution lane, not as a new review authority. `AGENTS.md` carries the Codex-readable project rules, `.codex/hooks.json` provides official Codex lifecycle feedback, and `.claude/agents/codex-dev.md` gives Claude a concrete delegation target for mechanical implementation work such as batch refactors, tests, docs, shell scripts, and CI checks. ADR-045 supersedes ADR-041 only for advisory Codex hooks; Codex still does not participate in Gate 2/4/6/8 review.
 
 ## Install
 
@@ -105,6 +105,9 @@ python3 scripts/install/phase2_auto.py /path/to/your/project --tier drop-in
 ```
 your-project/
 ├── AGENTS.md             # Codex-readable project rules and delegation boundaries
+├── .codex/
+│   ├── config.toml       # Enables Codex project hooks
+│   └── hooks.json        # Advisory Codex runtime feedback
 ├── .claude/
 │   ├── settings.json    # Hook registrations (appends, won't clobber)
 │   ├── agents/          # Delegation targets such as codex-dev
@@ -143,9 +146,9 @@ This repo now includes an experimental OpenCode compatibility proof-of-concept:
 - Project config: `opencode.json`
 - Notes: [docs/opencode-poc.md](docs/opencode-poc.md)
 
-Current PoC scope is intentionally narrow: session bootstrap, `.env` read sanitization, post-edit risk snapshots, post-edit guard/context feedback, compaction reminders, stop-time completion proposals, and read-only reviewer isolation. It proves wow-harness can attach to another agent runtime; it does not claim full Claude Code parity yet.
+Current PoC scope is intentionally narrow: session bootstrap, `.env` read sanitization, explicit OpenCode permissions, post-edit risk snapshots, post-edit guard/context feedback, compaction reminders, stop-time completion proposals, and read-only reviewer isolation. It proves wow-harness can attach to another agent runtime; it does not claim full Claude Code parity yet.
 
-Codex remains instruction-first by ADR-041, so use the explicit mechanical check after edits:
+Codex has project hooks when the `.codex/` layer is trusted. If hooks are disabled or you want a manual completion pass, run:
 
 ```bash
 python3 scripts/codex/wow_codex_check.py --strict
@@ -162,7 +165,7 @@ python3 scripts/codex/wow_codex_check.py --strict
 ## Requirements
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
-- Codex CLI is optional; when present, it reads the root `AGENTS.md` guidance.
+- Codex CLI is optional; when present and trusted, it reads `AGENTS.md` and project `.codex/` hooks.
 - Python 3.9+
 - Git
 

@@ -6,7 +6,7 @@
 
 这就是答案。
 
-wow-harness 是 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 的治理层，同时提供 Codex 指令和 Cursor / Claude / OpenCode 的全局 hook 分发。它让 AI agent 变得足够可靠——你定方向，AI 交付，工作真的能落地。靠的不是提示词里多写几句"请认真做"，而是机械化的审查门禁、完成验证和工具隔离。
+wow-harness 是 [Claude Code](https://docs.anthropic.com/en/docs/claude-code) 的治理层，同时提供 Codex 项目 hooks 和 Cursor / Claude / OpenCode 的全局 hook 分发。它让 AI agent 变得足够可靠——你定方向，AI 交付，工作真的能落地。靠的不是提示词里多写几句"请认真做"，而是机械化的审查门禁、完成验证和工具隔离。
 
 ## 问题
 
@@ -82,7 +82,7 @@ G0 问题  →  G1 设计  →  G2 审查*
 
 ### Codex 执行通道
 
-Codex 被集成为有边界的执行通道，不是新的审查权威。`AGENTS.md` 承载 Codex 可读的项目规则，`.claude/agents/codex-dev.md` 让 Claude 可以把批量重构、补测试、文档、shell 脚本、CI 检查这类机械实现工作分流出去。ADR-041 明确不新增 Codex router hook；默认靠人/Claude 判断，再轻量分流。
+Codex 被集成为有边界的执行通道，不是新的审查权威。`AGENTS.md` 承载 Codex 可读的项目规则，`.codex/hooks.json` 提供官方 Codex 生命周期反馈，`.claude/agents/codex-dev.md` 让 Claude 可以把批量重构、补测试、文档、shell 脚本、CI 检查这类机械实现工作分流出去。ADR-045 只为 advisory Codex hooks 局部 supersede ADR-041；Codex 仍不参与 Gate 2/4/6/8 审查。
 
 ## 安装
 
@@ -105,6 +105,9 @@ python3 scripts/install/phase2_auto.py /path/to/your/project --tier drop-in
 ```
 your-project/
 ├── AGENTS.md             # Codex 可读的项目规则和分流边界
+├── .codex/
+│   ├── config.toml       # 启用 Codex 项目 hooks
+│   └── hooks.json        # Codex advisory runtime feedback
 ├── .claude/
 │   ├── settings.json    # Hook 注册（追加模式，不覆盖已有配置）
 │   ├── agents/          # codex-dev 等分流目标
@@ -143,9 +146,9 @@ python3 scripts/install/wow_runtime_doctor.py
 - 项目配置：`opencode.json`
 - 说明文档：[docs/opencode-poc.md](docs/opencode-poc.md)
 
-当前 PoC 的范围刻意收窄：session 启动准备、`.env` 读取净化、编辑后的风险快照、编辑后的 guard/context 反馈、compact 延续提醒、停止时的完成提案，以及只读 reviewer 隔离。它证明 wow-harness 可以接到另一个 agent runtime 上；还不声称已经和 Claude Code 侧完整等价。
+当前 PoC 的范围刻意收窄：session 启动准备、`.env` 读取净化、显式 OpenCode 权限、编辑后的风险快照、编辑后的 guard/context 反馈、compact 延续提醒、停止时的完成提案，以及只读 reviewer 隔离。它证明 wow-harness 可以接到另一个 agent runtime 上；还不声称已经和 Claude Code 侧完整等价。
 
-Codex 按 ADR-041 仍是指令优先路径；改动后用显式机械检查补足 hook 缺口：
+Codex 在 `.codex/` layer 被信任后会启用项目 hooks。若 hooks 未启用，或你想手动做完成前机械检查，运行：
 
 ```bash
 python3 scripts/codex/wow_codex_check.py --strict
@@ -162,7 +165,7 @@ python3 scripts/codex/wow_codex_check.py --strict
 ## 环境要求
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
-- Codex CLI 可选；存在时读取仓根 `AGENTS.md` 指令。
+- Codex CLI 可选；存在且信任项目时读取 `AGENTS.md` 与 `.codex/` hooks。
 - Python 3.9+
 - Git
 

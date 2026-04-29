@@ -87,6 +87,7 @@ L5_registry:
   - ADR-030-guard-signal-protocol-and-governance-reload.md
   - ADR-038-harness-optimization-strategy.md
   - ADR-041-codex-claude-code-division-of-labor.md
+  - ADR-045-codex-native-hooks-runtime-parity.md
   # H 系列 sync (2026-04-29, from Towow @ dff58afb) — 9 ADR + 8 PLAN
   - ADR-H0-meta-charter.md
   - ADR-H1-crystal-learn-revival.md
@@ -138,6 +139,8 @@ settings_command_registry:
 
 rebaseline_triggers:
   - AGENTS.md
+  - .codex/config.toml
+  - .codex/hooks.json
   - .claude/agents/codex-dev.md
   - .wow-harness/MANIFEST.yaml
   - .wow-harness/issue-adapter.yaml

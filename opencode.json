@@ -1,5 +1,48 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "permission": {
+    "read": {
+      "*": "allow",
+      ".env*": "deny",
+      "**/.env*": "deny",
+      "*.env": "deny",
+      "*.env.*": "deny",
+      "*.env.example": "allow",
+      "**/.env.example": "allow",
+      "**/*.pem": "deny",
+      "**/*.key": "deny"
+    },
+    "grep": "allow",
+    "glob": "allow",
+    "edit": {
+      "*": "allow",
+      ".env*": "deny",
+      "**/.env*": "deny",
+      "**/*.pem": "deny",
+      "**/*.key": "deny"
+    },
+    "bash": {
+      "*": "ask",
+      "git status*": "allow",
+      "git diff*": "allow",
+      "git log*": "allow",
+      "rg *": "allow",
+      "node --check *": "allow",
+      "python3 -m compileall *": "allow",
+      "python3 scripts/install/wow_runtime_doctor.py*": "allow",
+      "python3 scripts/codex/wow_codex_check.py*": "allow",
+      "bash scripts/ci/count-components.sh*": "allow",
+      "python3 scripts/ci/scan_verify_artifacts.py*": "allow",
+      "python3 scripts/ci/detect_rebaseline_triggers.py*": "allow",
+      "git reset --hard*": "deny",
+      "git checkout --*": "deny",
+      "git clean -fd*": "deny",
+      "git push --force*": "deny",
+      "rm *": "deny"
+    },
+    "external_directory": "ask",
+    "doom_loop": "ask"
+  },
   "agent": {
     "build": {
       "permission": {

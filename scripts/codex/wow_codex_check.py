@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Codex-side wow-harness feedback pass.
 
-Codex does not get Claude Code's native lifecycle hooks in this repo (ADR-041),
-so this script gives Codex a mechanical "before you claim completion" pass
-without installing a Codex router hook.
+Codex now has official lifecycle hooks wired through ``.codex/hooks.json``.
+This script remains the mechanical fallback and Stop-time checker: it gives
+Codex a "before you claim completion" pass without making Codex a Gate reviewer.
 """
 from __future__ import annotations
 
@@ -69,8 +69,10 @@ RISK_ELEVATORS: list[tuple[str, str]] = [
     (".claude/skills/", "R3"),
     (".claude/rules/", "R3"),
     (".claude/agents/", "R3"),
+    (".codex/", "R3"),
     (".cursor/", "R3"),
     (".opencode/", "R3"),
+    ("scripts/codex/", "R3"),
     ("scripts/hooks/", "R3"),
     ("scripts/checks/", "R3"),
     ("scripts/install/", "R3"),
