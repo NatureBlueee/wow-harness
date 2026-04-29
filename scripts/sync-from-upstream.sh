@@ -469,5 +469,68 @@ else
     echo "  ⚠ MANIFEST.yaml not found at $MANIFEST"
 fi
 
+# ─── Step 11: vNext / WP-040 plugins backport ───
+# H 系列 ADR/PLAN 引用消费的中间层。先有 wow-harness（v1）→ 然后有 vNext
+# （v2，WP-040 backport）→ 然后有 H 系列（v3）。这一步把 v2 落地到
+# wow-harness，让 H5/H6 在 review-contract.yaml 上的 schema 落地点真实存在。
+# vNext 文件不含业务术语（harness 层抽象），无需脱敏。
+echo ""
+echo "── Step 11: vNext / WP-040 plugins backport ──"
+
+VNEXT_FILES=(
+    ".claude/plugins/towow-review-toolkit/.claude-plugin/plugin.json"
+    ".claude/plugins/towow-review-toolkit/agents/reviewer.md"
+    ".claude/plugins/towow-review-toolkit/contracts/evidence-packet-schema.json"
+    ".claude/plugins/towow-review-toolkit/contracts/review-contract.yaml"
+    ".claude/plugins/towow-review-toolkit/hooks/verify-gate.py"
+    ".claude/plugins/towow-mode-toolkit/.claude-plugin/plugin.json"
+    ".claude/plugins/towow-mode-toolkit/contracts/mode-contract.md"
+    ".claude/plugins/towow-mode-toolkit/hooks/capability-router.py"
+    ".claude/plugins/towow-mode-toolkit/hooks/evidence-emit.py"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/SKILL.md"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/transition.py"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/build.sh"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/plan.sh"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/release.sh"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/shadow-review.sh"
+    ".claude/plugins/towow-mode-toolkit/skills/mode/verify.sh"
+    ".claude/skills/toolkit/SKILL.md"
+    ".claude/skills/toolkit/list.sh"
+    ".claude/agents/review-base.yaml"
+    ".towow/toolkit-index.yaml"
+)
+
+VNEXT_COPIED=0
+VNEXT_UNCHANGED=0
+for rel_path in "${VNEXT_FILES[@]}"; do
+    src_v="$UPSTREAM_ROOT/$rel_path"
+    dst_v="$HARNESS_ROOT/$rel_path"
+    [ -f "$src_v" ] || { echo "  ⚠ MISSING upstream: $rel_path"; continue; }
+
+    if [ -f "$dst_v" ] && diff -q "$src_v" "$dst_v" > /dev/null 2>&1; then
+        ((VNEXT_UNCHANGED++))
+        continue
+    fi
+
+    if $DRY_RUN; then
+        echo "  WOULD COPY: $rel_path"
+    else
+        mkdir -p "$(dirname "$dst_v")"
+        cp "$src_v" "$dst_v"
+        if [[ "$rel_path" == *.py || "$rel_path" == *.sh ]]; then
+            chmod +x "$dst_v"
+        fi
+        echo "  COPIED: $rel_path"
+    fi
+    ((VNEXT_COPIED++))
+done
+
+echo "  Results: $VNEXT_COPIED to copy, $VNEXT_UNCHANGED unchanged"
+echo "  ℹ 集成提示："
+echo "    - reviewer agent: schema-level read-only (frontmatter tools 不含 Edit/Write)"
+echo "    - verify-gate.py: Stop hook (plugin.json 自注册)"
+echo "    - capability-router.py: PreToolUse hook (按 .towow/state/mode 决定 deny/defer/ask/allow)"
+echo "    - /mode plan|build|verify|release: 用户走完整生命周期的入口"
+
 echo ""
 echo "=== Sync complete ==="
