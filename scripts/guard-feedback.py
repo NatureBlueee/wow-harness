@@ -102,12 +102,24 @@ def get_file_path() -> str | None:
         return None
 
 
-def make_relative(file_path: str) -> str:
-    """将绝对路径转换为相对于 REPO_ROOT 的路径。"""
+def make_relative(file_path: str) -> str | None:
+    """将绝对路径转换为相对于 REPO_ROOT 的路径。
+
+    契约：返回值必须是 repo-relative path，否则返回 None。下游
+    ``match()`` / ``run_guards()`` 假设 repo-relative，不得静默放行
+    仓外路径（包括 symlink 跨边界）。
+
+    See: docs/issues/guard-20260405-0110-guard-feedback-path-escape.md
+    """
     try:
-        return str(Path(file_path).resolve().relative_to(REPO_ROOT))
+        resolved = Path(file_path).resolve()
+    except (OSError, RuntimeError):
+        return None
+    try:
+        return str(resolved.relative_to(REPO_ROOT))
     except ValueError:
-        return file_path
+        # 仓外路径或 symlink 跨边界 — 静默拒绝，不回退到原路径
+        return None
 
 
 def append_findings(output_parts: list[str], findings: list[object]) -> None:
@@ -186,6 +198,14 @@ def main() -> None:
         sys.exit(0)
 
     file_path = make_relative(file_path)
+    if file_path is None:
+        # 仓外路径或无法 resolve — 拒绝处理
+        # [guard-20260405-0110: 不得把仓外路径喂给 match()/run_guards()]
+        emit_metric(
+            "path_rejected",
+            reason="outside_repo_or_unresolvable",
+        )
+        sys.exit(0)
 
     # ── Fragment dedup: only inject new fragments ──
     already_injected = _read_injected()

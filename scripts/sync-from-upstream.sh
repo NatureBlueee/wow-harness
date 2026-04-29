@@ -68,6 +68,7 @@ SKIPPED=0
 UNCHANGED=0
 
 for src_file in "$UPSTREAM/scripts/hooks/"*; do
+    [ -f "$src_file" ] || continue  # skip directories (e.g. __pycache__)
     filename="$(basename "$src_file")"
 
     # Skip Towow-only files
@@ -269,6 +270,203 @@ if [ -d "$src_frag_dir" ]; then
     echo "  Results: $FRAG_COPIED copied, $FRAG_UNCHANGED unchanged"
 else
     echo "  ⚠ Upstream context-fragments/ not found"
+fi
+
+# ─── Step 6: H series decisions (ADR-Hx + PLAN-Hx) ───
+# H 系列治理产物 — 9 站收口 meta-program。脱敏（DP-2=A 推荐）保留
+# Nature 作 governance 主体，替换 K/boattosea/EvoMap/SacredPlay 等业务名。
+echo ""
+echo "── Step 6: H series decisions (ADR-Hx + PLAN-Hx) ──"
+H_COPIED=0
+H_UNCHANGED=0
+H_TOTAL=0
+
+mkdir -p "$HARNESS_ROOT/docs/decisions"
+
+for src in "$UPSTREAM/docs/decisions/"ADR-H*.md "$UPSTREAM/docs/decisions/"PLAN-H*.md; do
+    [ -f "$src" ] || continue
+    ((H_TOTAL++))
+    fname="$(basename "$src")"
+    dst="$HARNESS_ROOT/docs/decisions/$fname"
+
+    if [ -f "$dst" ] && diff -q "$src" "$dst" > /dev/null 2>&1; then
+        ((H_UNCHANGED++))
+        continue
+    fi
+
+    if $DRY_RUN; then
+        echo "  WOULD COPY: docs/decisions/$fname"
+    else
+        cp "$src" "$dst"
+        # 轻脱敏 (DP-2=A): 业务名 → 通用占位
+        perl -pi -e '
+            s/kunzhi-coach|自航船/业务场景示例/g;
+            s/boattosea/业务集成示例/g;
+            s/Sacred Play/Demo 网站/g;
+            s/EvoMap/能力图示例/g;
+            s/imakemy\.world/example.com/g;
+            s|47\.118\.31\.230|<server-ip>|g;
+        ' "$dst"
+        echo "  COPIED + DESENSITIZED: docs/decisions/$fname"
+    fi
+    ((H_COPIED++))
+done
+
+echo "  Results: $H_COPIED to copy, $H_UNCHANGED unchanged, $H_TOTAL total found upstream"
+
+# ─── Step 7: hanis-protocol rule ───
+echo ""
+echo "── Step 7: .claude/rules/hanis-protocol.md ──"
+
+src_rule="$UPSTREAM/.claude/rules/hanis-protocol.md"
+dst_rule="$HARNESS_ROOT/.claude/rules/hanis-protocol.md"
+
+if [ -f "$src_rule" ]; then
+    mkdir -p "$HARNESS_ROOT/.claude/rules"
+    if [ -f "$dst_rule" ] && diff -q "$src_rule" "$dst_rule" > /dev/null 2>&1; then
+        echo "  ✓ unchanged"
+    elif $DRY_RUN; then
+        echo "  WOULD COPY: .claude/rules/hanis-protocol.md"
+    else
+        cp "$src_rule" "$dst_rule"
+        echo "  COPIED: .claude/rules/hanis-protocol.md"
+    fi
+else
+    echo "  ⚠ Upstream hanis-protocol.md not found"
+fi
+
+# ─── Step 8: H9 inbox schema + 5 hooks ───
+echo ""
+echo "── Step 8: H9 inbox infrastructure ──"
+
+# 8a. inbox schema
+src_schema="$UPSTREAM/.towow/inbox/schema/message-v1.json"
+dst_schema_dir="$HARNESS_ROOT/.towow/inbox/schema"
+dst_schema="$dst_schema_dir/message-v1.json"
+
+if [ -f "$src_schema" ]; then
+    mkdir -p "$dst_schema_dir"
+    if [ -f "$dst_schema" ] && diff -q "$src_schema" "$dst_schema" > /dev/null 2>&1; then
+        echo "  ✓ schema unchanged"
+    elif $DRY_RUN; then
+        echo "  WOULD COPY: .towow/inbox/schema/message-v1.json"
+    else
+        cp "$src_schema" "$dst_schema"
+        echo "  COPIED: .towow/inbox/schema/message-v1.json"
+    fi
+else
+    echo "  ⚠ Upstream inbox schema not found at $src_schema"
+fi
+
+# 8b. 5 inbox hooks (write-ledger / validate / inject-on-start / poll / ack)
+INBOX_HOOKS=(
+    "inbox-write-ledger.py"
+    "inbox-validate.py"
+    "inbox-inject-on-start.py"
+    "inbox-poll.sh"
+    "inbox-ack.py"
+)
+
+INBOX_COPIED=0
+INBOX_UNCHANGED=0
+
+for hook_name in "${INBOX_HOOKS[@]}"; do
+    src_hook="$UPSTREAM/scripts/hooks/$hook_name"
+    dst_hook="$HARNESS_ROOT/scripts/hooks/$hook_name"
+
+    if [ ! -f "$src_hook" ]; then
+        echo "  ⚠ Upstream missing: $hook_name"
+        continue
+    fi
+
+    if [ -f "$dst_hook" ] && diff -q "$src_hook" "$dst_hook" > /dev/null 2>&1; then
+        ((INBOX_UNCHANGED++))
+        continue
+    fi
+
+    if $DRY_RUN; then
+        echo "  WOULD COPY: scripts/hooks/$hook_name"
+    else
+        cp "$src_hook" "$dst_hook"
+        # 路径替换在 Step 2 已统一处理（find-towow-root.sh → find-project-root.sh）
+        perl -pi -e 's/find-towow-root\.sh/find-project-root.sh/g' "$dst_hook"
+        echo "  COPIED + PATCHED: scripts/hooks/$hook_name"
+    fi
+    ((INBOX_COPIED++))
+done
+
+echo "  Results: $INBOX_COPIED to copy, $INBOX_UNCHANGED unchanged"
+
+# ─── Step 9: ADR/PLAN 编号唯一性 chokepoint ───
+# pre-commit gate that prevents future ADR/PLAN number collisions.
+# 来源: Towow commit dff58afb / docs/issues/guard-20260429-1706-*
+echo ""
+echo "── Step 9: ADR/PLAN numbering uniqueness ──"
+
+NUMBERING_FILES=(
+    "scripts/checks/check_adr_plan_numbering.py"
+    "scripts/checks/next_decision_number.sh"
+)
+
+NUM_COPIED=0
+NUM_UNCHANGED=0
+
+for rel_path in "${NUMBERING_FILES[@]}"; do
+    src_num="$UPSTREAM/$rel_path"
+    dst_num="$HARNESS_ROOT/$rel_path"
+
+    if [ ! -f "$src_num" ]; then
+        echo "  ⚠ Upstream missing: $rel_path"
+        continue
+    fi
+
+    mkdir -p "$(dirname "$dst_num")"
+
+    if [ -f "$dst_num" ] && diff -q "$src_num" "$dst_num" > /dev/null 2>&1; then
+        ((NUM_UNCHANGED++))
+        continue
+    fi
+
+    if $DRY_RUN; then
+        echo "  WOULD COPY: $rel_path"
+    else
+        cp "$src_num" "$dst_num"
+        # next_decision_number.sh 是可执行 shell
+        if [[ "$rel_path" == *.sh ]]; then chmod +x "$dst_num"; fi
+        echo "  COPIED: $rel_path"
+    fi
+    ((NUM_COPIED++))
+done
+
+echo "  Results: $NUM_COPIED to copy, $NUM_UNCHANGED unchanged"
+echo "  ℹ 集成到 .githooks/pre-commit 需 Nature 决定 (DP-补)："
+echo "    选项 A: wow-harness 启用 core.hooksPath = .githooks 模式（推荐，跟 Towow 对齐）"
+echo "    选项 B: 手装到 .git/hooks/pre-commit"
+
+# ─── Step 10: MANIFEST.yaml physical_files 自检 ───
+# 不自动改 manifest（schema-driven，需手工校准 L registry），仅给出当前
+# 计数与建议增量。
+echo ""
+echo "── Step 10: MANIFEST.yaml physical_files audit ──"
+
+MANIFEST="$HARNESS_ROOT/.wow-harness/MANIFEST.yaml"
+if [ -f "$MANIFEST" ]; then
+    CURRENT_COUNT=$(grep -E "^physical_files:" "$MANIFEST" | sed -E 's/^physical_files:[[:space:]]*([0-9]+).*/\1/')
+    echo "  Current physical_files: $CURRENT_COUNT"
+
+    # H 系列新增预估 (5 inbox hooks + 2 numbering scripts + hanis-protocol.md
+    # + inbox schema + 9 ADR + 8 PLAN = 26)
+    ESTIMATED_DELTA=26
+    echo "  Estimated H series delta: +$ESTIMATED_DELTA"
+    echo "    - 5 inbox hooks (scripts/hooks/inbox-*.{py,sh})"
+    echo "    - 2 numbering scripts (scripts/checks/check_adr_plan_numbering.py + next_decision_number.sh)"
+    echo "    - 1 rule (.claude/rules/hanis-protocol.md)"
+    echo "    - 1 schema (.towow/inbox/schema/message-v1.json)"
+    echo "    - 9 ADR-Hx + 8 PLAN-Hx = 17 decisions"
+    echo "  ➜ Suggested new physical_files: $((CURRENT_COUNT + ESTIMATED_DELTA))"
+    echo "  ➜ Update L1/L3 registries + physical_files manually after sync."
+else
+    echo "  ⚠ MANIFEST.yaml not found at $MANIFEST"
 fi
 
 echo ""

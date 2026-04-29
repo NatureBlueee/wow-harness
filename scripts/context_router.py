@@ -12,9 +12,11 @@ Usage:
 """
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 FRAGMENTS_DIR = Path(__file__).resolve().parent / "context-fragments"
+_FRAGMENTS_DIR_RESOLVED = FRAGMENTS_DIR.resolve()
 
 # ── 路由表：文件路径前缀 → 上下文片段名列表 ──
 # 完全按 ADR-030 Section 3.4.1 定义
@@ -82,20 +84,56 @@ FALLBACK_FRAGMENTS = ["general-dev-principles"]
 
 
 def match(file_path: str) -> list[str]:
-    """返回匹配的上下文片段名列表。最长前缀优先，去重保序。"""
+    """返回匹配的上下文片段名列表。最长前缀优先，去重保序。
+
+    契约：输入必须是已规范化的 repo-relative path。包含 ``..``
+    traversal 或绝对路径的输入会被拒绝，返回空列表——防止
+    ``backend/product/../../../../etc/passwd`` 这类路径冒充
+    ``backend/product/`` 前缀匹配。
+
+    See: docs/issues/guard-20260405-0110-guard-feedback-path-escape.md
+    """
+    if not file_path:
+        return []
+    # 拒绝绝对路径
+    if os.path.isabs(file_path):
+        return []
+    # Normalize 并拒绝 .. traversal
+    normalized = os.path.normpath(file_path).replace(os.sep, "/")
+    if normalized.startswith("../") or normalized == ".." or "/../" in normalized:
+        return []
+
     matched: list[str] = []
     for pattern, fragments in sorted(
         CONTEXT_MAP.items(), key=lambda x: -len(x[0])
     ):
-        if file_path.startswith(pattern) or file_path.endswith(pattern):
+        if normalized.startswith(pattern) or normalized.endswith(pattern):
             matched.extend(fragments)
     # 去重保序
     return list(dict.fromkeys(matched))
 
 
 def load_fragment(name: str) -> str:
-    """加载片段文件内容。返回空字符串如果文件不存在。"""
-    path = FRAGMENTS_DIR / f"{name}.md"
-    if path.is_file():
-        return path.read_text(encoding="utf-8").strip()
+    """加载片段文件内容。返回空字符串如果文件不存在或路径越界。
+
+    契约：``name`` 经拼接 + ``.md`` 后必须位于 ``FRAGMENTS_DIR`` 内。
+    ``resolve()`` 后再校验 containment，防止 ``../../etc/passwd`` 之类
+    的 name 逃逸到 fragments 目录以外。
+
+    See: docs/issues/guard-20260405-0110-guard-feedback-path-escape.md
+    """
+    if not name:
+        return ""
+    candidate = (FRAGMENTS_DIR / f"{name}.md")
+    try:
+        resolved = candidate.resolve()
+    except (OSError, RuntimeError):
+        return ""
+    # 必须仍在 FRAGMENTS_DIR 内（containment check）
+    try:
+        resolved.relative_to(_FRAGMENTS_DIR_RESOLVED)
+    except ValueError:
+        return ""
+    if resolved.is_file():
+        return resolved.read_text(encoding="utf-8").strip()
     return ""

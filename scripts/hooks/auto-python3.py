@@ -9,30 +9,21 @@ import json
 import sys
 import re
 
+from _hook_output import pre_tool_use_allow
+
 
 def main():
     try:
         event = json.loads(sys.stdin.read())
     except (json.JSONDecodeError, EOFError):
-        print(json.dumps({"decision": "allow"}))
         return
 
     tool_input = event.get("tool_input", {})
     command = tool_input.get("command", "")
 
-    # 匹配裸 python 命令（不匹配 python3、ipython 等）
-    # 模式：行首或空格后的 python 后跟空格/参数
     if re.search(r'(?:^|[\s;&|])python(?:\s)', command):
         new_command = re.sub(r'(?:^|(?<=[\s;&|]))python(?=\s)', 'python3', command)
-        print(json.dumps({
-            "decision": "allow",
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "updatedInput": {"command": new_command}
-            }
-        }))
-    else:
-        print(json.dumps({"decision": "allow"}))
+        pre_tool_use_allow(updated_input={"command": new_command})
 
 
 if __name__ == "__main__":

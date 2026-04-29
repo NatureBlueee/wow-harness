@@ -42,6 +42,14 @@ L1_registry:
   - deploy-guard.py
   - context_router.py
   - guard_router.py
+  # H 系列 sync (2026-04-29, from Towow @ dff58afb)
+  - _hook_output.py            # 16 hook IO helpers (PLAN-098 / ADR-058)
+  - owner-guard.py             # PreToolUse Edit/Write owner enforcement (H2)
+  - inbox-write-ledger.py      # H9 邮箱 ledger
+  - inbox-validate.py          # H9 邮箱 schema-v1 校验
+  - inbox-inject-on-start.py   # H9 邮箱 SessionStart 注入
+  - inbox-poll.sh              # H9 邮箱主窗口轮询
+  - inbox-ack.py               # H9 邮箱 ack 回送
 
 L2_registry:
   - check_api_types.py
@@ -59,8 +67,13 @@ L2_registry:
   - check_skill_parity.py
   - check_versions.py
   - regenerate_magic_docs.py
+  # H 系列 sync (2026-04-29, from Towow @ dff58afb)
+  - check_adr_plan_numbering.py    # pre-commit ADR/PLAN 编号唯一性
+  - next_decision_number.sh         # 起草助手（pull-mode 查可用号）
 
-L3_registry: []   # populated by WP-05 (.claude/rules/*.md)
+L3_registry:
+  # H 系列 sync (2026-04-29)
+  - hanis-protocol.md   # H 系列治理协议（H0 元规约 + 9 站速查 + H4/H5 哲学边界）
 
 L4_registry:
   - lead
@@ -71,6 +84,24 @@ L5_registry:
   - ADR-030-guard-signal-protocol-and-governance-reload.md
   - ADR-038-harness-optimization-strategy.md
   - ADR-041-codex-claude-code-division-of-labor.md
+  # H 系列 sync (2026-04-29, from Towow @ dff58afb) — 9 ADR + 8 PLAN
+  - ADR-H0-meta-charter.md
+  - ADR-H1-crystal-learn-revival.md
+  - ADR-H2-identity-isolation.md
+  - ADR-H3-memory-scope.md
+  - ADR-H4-prompt-governance.md
+  - ADR-H5-gate-quantization.md
+  - ADR-H6-state-file-health.md
+  - ADR-H8-issue-and-doc-compliance.md
+  - ADR-H9-mailbox.md
+  - PLAN-H1-crystal-learn-revival.md
+  - PLAN-H2-identity-isolation.md
+  - PLAN-H3-memory-scope.md
+  - PLAN-H4-prompt-governance.md
+  - PLAN-H5-gate-quantization.md
+  - PLAN-H6-state-file-health.md
+  - PLAN-H8-issue-and-doc-compliance.md
+  - PLAN-H9-mailbox.md
 
 # ---------------------------------------------------------------------------
 # settings_command_registry — authoritative list of all hook commands
@@ -115,9 +146,11 @@ rebaseline_triggers:
 #   WP-11 commit: 18 (+ install-wow-harness SKILL.md)
 #   post-audit: 22 (+ risk-tracker, session-start-reset-risk, sanitize-on-read,
 #                     context_router, guard_router)
+#   H series sync 2026-04-29: 51 (+ 7 hooks + 2 numbering + 1 rule + 1 schema
+#                     + 17 H decisions + 1 .githooks/pre-commit = +29)
 # ---------------------------------------------------------------------------
 
-physical_files: 22
+physical_files: 51
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.
