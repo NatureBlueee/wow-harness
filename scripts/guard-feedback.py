@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -120,6 +121,51 @@ def _write_injected(fragments: set[str]) -> None:
     _INJECTED_FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
 
+def _extract_batch_paths(payload: object) -> list[str]:
+    """Extract edited file paths from a PostToolBatch stdin payload.
+
+    Handles three shapes Claude Code may send:
+      - list of tool-call dicts
+      - dict with ``tool_calls`` / ``tools`` key
+      - single tool-call dict (fallback)
+    """
+    _EDIT_TOOLS = {"Edit", "Write", "MultiEdit"}
+    calls: list = []
+    if isinstance(payload, list):
+        calls = payload
+    elif isinstance(payload, dict):
+        calls = payload.get("tool_calls") or payload.get("tools") or []
+        if not calls and "tool_name" in payload:
+            calls = [payload]
+    paths: list[str] = []
+    for call in calls:
+        if not isinstance(call, dict):
+            continue
+        if call.get("tool_name") not in _EDIT_TOOLS:
+            continue
+        ti = call.get("tool_input") or {}
+        fp = ti.get("file_path") or ti.get("path") or ""
+        if fp and fp not in paths:
+            paths.append(fp)
+    return paths
+
+
+def _run_batch() -> None:
+    """PostToolBatch mode: parse payload, re-invoke self once per edited file."""
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except (json.JSONDecodeError, ValueError, OSError):
+        return
+    for fp in _extract_batch_paths(payload):
+        sub_input = json.dumps({"tool_name": "Edit", "tool_input": {"file_path": fp}})
+        subprocess.run(
+            [sys.executable, __file__],
+            input=sub_input.encode(),
+            capture_output=False,
+            timeout=25,
+        )
+
+
 def get_file_path() -> str | None:
     """从 stdin JSON 或命令行参数获取文件路径。"""
     if "--dry-run" in sys.argv:
@@ -192,13 +238,8 @@ def main() -> None:
     if not _issue_adapter_allows_feedback():
         sys.exit(0)
 
-    # PostToolBatch entry (v0): drain stdin and noop. Reserved for future
-    # batched processing of parallel Edit/Write tool calls.
     if batch:
-        try:
-            sys.stdin.read()
-        except (OSError, ValueError):
-            pass
+        _run_batch()
         sys.exit(0)
 
     # 每次 hook 触发记录 — 即使后续 early-exit 也算一次触发
