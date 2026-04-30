@@ -2,7 +2,7 @@
 """PostToolUse hook: L2 Risk Snapshot Tracker (ADR-044 §4)
 
 在每次 Edit|Write 后，根据被修改文件的路径计算风险等级，
-写入 .towow/state/risk-snapshot.json。
+写入 .wow-harness/state/risk-snapshot.json，并镜像到旧 .towow/state/。
 
 核心规则（§4.2）：风险只能升，不能降（棘轮）。
 核心规则（§4.3）：风险由客观事实（路径）计算，不由 AI 自述。
@@ -24,7 +24,8 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-STATE_FILE = REPO_ROOT / ".towow" / "state" / "risk-snapshot.json"
+CANONICAL_STATE_FILE = REPO_ROOT / ".wow-harness" / "state" / "risk-snapshot.json"
+LEGACY_STATE_FILE = REPO_ROOT / ".towow" / "state" / "risk-snapshot.json"
 
 # ─── Risk level ordering ───
 RISK_ORDER = {"R0": 0, "R1": 1, "R2": 2, "R3": 3, "R4": 4}
@@ -40,12 +41,19 @@ RISK_ELEVATORS: list[tuple[str, str]] = [
 
     # R3: governance / hooks / CI / security
     ("CLAUDE.md", "R3"),
+    ("AGENTS.md", "R3"),
+    (".wow-harness/", "R3"),
     (".claude/settings.json", "R3"),
     (".claude/skills/", "R3"),
     (".claude/rules/", "R3"),
     (".claude/agents/", "R3"),
+    (".codex/", "R3"),
+    (".cursor/", "R3"),
+    (".opencode/", "R3"),
+    ("scripts/codex/", "R3"),
     ("scripts/hooks/", "R3"),
     ("scripts/checks/", "R3"),
+    ("scripts/install/", "R3"),
     (".github/", "R3"),
 
     # R2: public contracts
@@ -72,11 +80,12 @@ def read_payload() -> dict:
 
 def load_snapshot() -> dict:
     """Load existing risk snapshot, or default R0."""
-    if STATE_FILE.exists():
-        try:
-            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            pass
+    for state_file in (CANONICAL_STATE_FILE, LEGACY_STATE_FILE):
+        if state_file.exists():
+            try:
+                return json.loads(state_file.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
     return {
         "risk_level": "R0",
         "risk_sources": [],
@@ -86,11 +95,10 @@ def load_snapshot() -> dict:
 
 
 def save_snapshot(snap: dict) -> None:
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    STATE_FILE.write_text(
-        json.dumps(snap, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    payload = json.dumps(snap, ensure_ascii=False, indent=2) + "\n"
+    for state_file in (CANONICAL_STATE_FILE, LEGACY_STATE_FILE):
+        state_file.parent.mkdir(parents=True, exist_ok=True)
+        state_file.write_text(payload, encoding="utf-8")
 
 
 def classify_file(file_path: str) -> str:

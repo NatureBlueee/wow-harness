@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "permissions": {
+    "allow": [
+      "Shell(**)",
+      "Read(**)",
+      "Write(**)",
+      "Grep(**)",
+      "Glob(**)",
+      "Task(**)",
+      "WebFetch(**)",
+      "Mcp(**)"
+    ],
+    "deny": [
+      "Shell(rm)",
+      "Shell(shred)",
+      "Shell(mkfs)",
+      "Shell(dd)",
+      "Read(.env*)",
+      "Read(**/.env*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Write(.env*)",
+      "Write(**/.env*)",
+      "Write(**/*.pem)",
+      "Write(**/*.key)"
+    ]
+  }
+}

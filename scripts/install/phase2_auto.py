@@ -9,7 +9,7 @@ Sequence:
   3. Resolve tier policy (drop-in / adapt / mine)
   4. Resolve project list (current / global / explicit naming)
   5. For each project:
-     a. Copy bundle staging → .claude/ (dry-run or real)
+     a. Copy bundle staging → .claude/.codex/.wow-harness/scripts/schemas (dry-run or real)
      b. Atomic append 1 PreToolUse Read|Bash matcher to settings.json (15→16)
         - MUST use json library, FORBIDDEN to use sed/textual edit
         - Idempotent: if matcher already exists, skip
@@ -82,8 +82,9 @@ def _check_trust_status(project_root: Path, accept_degraded: bool) -> bool:
     return True
 
 
-# Bundle directories to copy to target project
-BUNDLE_DIRS = [".claude", ".wow-harness", "scripts", "schemas"]
+# Bundle directories/files to copy to target project
+BUNDLE_DIRS = [".claude", ".codex", ".wow-harness", "scripts", "schemas"]
+BUNDLE_FILES = ["AGENTS.md"]
 # Files/dirs to exclude from bundle copy (install-specific, not needed in target)
 BUNDLE_EXCLUDE = {
     "__pycache__", ".git", "install-trust-token.json",
@@ -92,13 +93,29 @@ BUNDLE_EXCLUDE = {
 
 
 def _copy_bundle(target_root: Path, dry_run: bool = False) -> bool:
-    """Step 5a: copy bundle dirs from wow-harness to target project.
+    """Step 5a: copy bundle dirs/files from wow-harness to target project.
 
-    Copies .claude/, .wow-harness/, scripts/, schemas/ to target.
+    Copies .claude/, .codex/, .wow-harness/, scripts/, schemas/, and AGENTS.md to target.
     Idempotent: only copies files that don't exist or are older.
     Returns True if any files were copied.
     """
     copied_count = 0
+    for file_name in BUNDLE_FILES:
+        src_file = REPO_ROOT / file_name
+        if not src_file.is_file():
+            continue
+        dst_file = target_root / file_name
+        if dst_file.exists():
+            if (dst_file.stat().st_size == src_file.stat().st_size
+                    and dst_file.stat().st_mtime >= src_file.stat().st_mtime):
+                continue
+        if dry_run:
+            copied_count += 1
+            continue
+        dst_file.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_file, dst_file)
+        copied_count += 1
+
     for dir_name in BUNDLE_DIRS:
         src_dir = REPO_ROOT / dir_name
         dst_dir = target_root / dir_name
@@ -409,7 +426,7 @@ def main() -> int:
         action = "would copy" if args.dry_run else "copied"
         bundle_copied = _copy_bundle(project_root, dry_run=args.dry_run)
         if bundle_copied:
-            print(f"  {action} bundle files (.claude/ .wow-harness/ scripts/ schemas/)")
+            print(f"  {action} bundle files (AGENTS.md .claude/ .codex/ .wow-harness/ scripts/ schemas/)")
             if not args.dry_run:
                 _log_event(project_root, "bundle_copied", f"tier={args.tier}")
         else:

@@ -5,6 +5,10 @@ ADR-030 Governance Reload 的实际执行入口，同时承担：
 - 机制 A（上下文路由）：每次 Edit/Write 后，注入相关上下文片段
 - 机制 B（guard 检查）：运行相关 guard，报告 findings
 
+``.wow-harness/issue-adapter.yaml``（若存在）中的 ``enabled``：
+- ``false``（默认，第三方安装）：本脚本立即退出，不注入、不跑 guard（纯 noop）。
+- ``true``：启用内置 ``context_router`` + ``guard_router``；``routes`` / ``guards`` 字段为未来扩展预留。
+
 Fragment 去重（CC alreadySurfaced pattern）：同一 fragment 在一个编辑 session
 内只注入一次，后续编辑静默（exit 0），大幅减少 token 消耗。
 
@@ -22,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -31,6 +36,37 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.context_router import FALLBACK_FRAGMENTS, load_fragment, match  # noqa: E402
 from scripts.guard_router import read_all_signals, run_guards, write_session_signal  # noqa: E402
+
+_ISSUE_ADAPTER_PATH = REPO_ROOT / ".wow-harness" / "issue-adapter.yaml"
+
+
+def _issue_adapter_allows_feedback() -> bool:
+    """Return False when issue-adapter.yaml disables guard-feedback (safe default for installs).
+
+    Missing file: treat as enabled (legacy repos / pre-issue-adapter).
+    Parse errors: fail-open True so a typo does not brick hooks.
+    """
+    if not _ISSUE_ADAPTER_PATH.is_file():
+        return True
+    text = _ISSUE_ADAPTER_PATH.read_text(encoding="utf-8", errors="replace")
+    try:
+        import yaml  # type: ignore
+
+        data = yaml.safe_load(text)
+        if isinstance(data, dict):
+            return bool(data.get("enabled", False))
+    except Exception:
+        pass
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("enabled:"):
+            val = stripped.split(":", 1)[1].strip().lower()
+            if val in ("true", "yes", "1"):
+                return True
+            if val in ("false", "no", "0"):
+                return False
+    return True
+
 
 # ── Fragment dedup (CC alreadySurfaced pattern) ──
 # Track which fragments have been injected in the current editing session.
@@ -83,6 +119,51 @@ def _write_injected(fragments: set[str]) -> None:
     guard_dir.mkdir(parents=True, exist_ok=True)
     data = {"timestamp": time.time(), "fragments": sorted(fragments)}
     _INJECTED_FILE.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def _extract_batch_paths(payload: object) -> list[str]:
+    """Extract edited file paths from a PostToolBatch stdin payload.
+
+    Handles three shapes Claude Code may send:
+      - list of tool-call dicts
+      - dict with ``tool_calls`` / ``tools`` key
+      - single tool-call dict (fallback)
+    """
+    _EDIT_TOOLS = {"Edit", "Write", "MultiEdit"}
+    calls: list = []
+    if isinstance(payload, list):
+        calls = payload
+    elif isinstance(payload, dict):
+        calls = payload.get("tool_calls") or payload.get("tools") or []
+        if not calls and "tool_name" in payload:
+            calls = [payload]
+    paths: list[str] = []
+    for call in calls:
+        if not isinstance(call, dict):
+            continue
+        if call.get("tool_name") not in _EDIT_TOOLS:
+            continue
+        ti = call.get("tool_input") or {}
+        fp = ti.get("file_path") or ti.get("path") or ""
+        if fp and fp not in paths:
+            paths.append(fp)
+    return paths
+
+
+def _run_batch() -> None:
+    """PostToolBatch mode: parse payload, re-invoke self once per edited file."""
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except (json.JSONDecodeError, ValueError, OSError):
+        return
+    for fp in _extract_batch_paths(payload):
+        sub_input = json.dumps({"tool_name": "Edit", "tool_input": {"file_path": fp}})
+        subprocess.run(
+            [sys.executable, __file__],
+            input=sub_input.encode(),
+            capture_output=False,
+            timeout=25,
+        )
 
 
 def get_file_path() -> str | None:
@@ -152,6 +233,14 @@ def main() -> None:
     check_only = "--check-only" in sys.argv
     once = "--once" in sys.argv
     dry_run = "--dry-run" in sys.argv
+    batch = "--batch" in sys.argv
+
+    if not _issue_adapter_allows_feedback():
+        sys.exit(0)
+
+    if batch:
+        _run_batch()
+        sys.exit(0)
 
     # 每次 hook 触发记录 — 即使后续 early-exit 也算一次触发
     # [ADR-038 D1: hook_trigger_count metric]

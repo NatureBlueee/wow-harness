@@ -20,6 +20,7 @@ notes: >
 # ---------------------------------------------------------------------------
 
 L1_registry:
+  - before-submit-harness-ping.py
   - auto-python3.py
   - deploy-progress-on-session-end.py
   - failure-analyzer.py
@@ -31,6 +32,7 @@ L1_registry:
   - risk-tracker.py
   - sanitize-on-read.py
   - session-reflection.py
+  - session-start-harness-banner.py
   - session-start-magic-docs.py
   - session-start-reset-risk.py
   - session-start-toolkit-reminder.py
@@ -42,6 +44,7 @@ L1_registry:
   - deploy-guard.py
   - context_router.py
   - guard_router.py
+  - lib/harness_visible.py
   # H 系列 sync (2026-04-29, from Towow @ dff58afb)
   - _hook_output.py            # 16 hook IO helpers (PLAN-098 / ADR-058)
   - owner-guard.py             # PreToolUse Edit/Write owner enforcement (H2)
@@ -50,6 +53,11 @@ L1_registry:
   - inbox-inject-on-start.py   # H9 邮箱 SessionStart 注入
   - inbox-poll.sh              # H9 邮箱主窗口轮询
   - inbox-ack.py               # H9 邮箱 ack 回送
+  # multi-runtime parity (2026-04-30, branch codex/consolidate-harness-runtimes)
+  - lib/run-py.sh                      # cross-platform python bridge (skip Win Store stub)
+  - hooks/user-prompt-submit-context.py # UserPromptSubmit context-fragment injection
+  - hooks/worktree-create-h0-guard.py   # WorktreeCreate H0.1 施工隔离 enforcement
+  - hooks/pre-mcp-guard.py              # Cursor beforeMCPExecution sanitize guard
 
 L2_registry:
   - check_api_types.py
@@ -84,6 +92,7 @@ L5_registry:
   - ADR-030-guard-signal-protocol-and-governance-reload.md
   - ADR-038-harness-optimization-strategy.md
   - ADR-041-codex-claude-code-division-of-labor.md
+  - ADR-045-codex-native-hooks-runtime-parity.md
   # H 系列 sync (2026-04-29, from Towow @ dff58afb) — 9 ADR + 8 PLAN
   - ADR-H0-meta-charter.md
   - ADR-H1-crystal-learn-revival.md
@@ -119,13 +128,18 @@ settings_command_registry:
   - { stage: PreToolUse,         matcher: "Read|Bash",  script: scripts/hooks/sanitize-on-read.py,             timeout: 10 }
   - { stage: PreCompact,         matcher: "*",          script: scripts/hooks/precompact.sh,                    timeout: 5 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-reset-risk.py,      timeout: 3 }
+  - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-harness-banner.py,  timeout: 5 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-magic-docs.py,      timeout: 10 }
   - { stage: SessionStart,       matcher: "*",          script: scripts/hooks/session-start-toolkit-reminder.py, timeout: 5 }
   - { stage: Stop,               matcher: "*",          script: scripts/hooks/stop-evaluator.py,                timeout: 10 }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/session-reflection.py,            timeout: 10 }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/trace-analyzer.py,                timeout: 30, args: "analyze --days 1 --min-samples 3" }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/deploy-progress-on-session-end.py, timeout: 5 }
-  - { stage: PostToolUseFailure, matcher: "*",          script: scripts/hooks/failure-analyzer.py,              timeout: 5 }
+  - { stage: PostToolUseFailure, matcher: "*",          script: scripts/hooks/failure-analyzer.py,              timeout: 5  }
+  # multi-runtime parity additions (2026-04-30)
+  - { stage: UserPromptSubmit,  matcher: "",           script: scripts/hooks/user-prompt-submit-context.py,   timeout: 5  }
+  - { stage: PostToolBatch,     matcher: "",           script: scripts/guard-feedback.py,                      timeout: 30, args: "--batch" }
+  - { stage: WorktreeCreate,    matcher: "",           script: scripts/hooks/worktree-create-h0-guard.py,     timeout: 5  }
 
 # ---------------------------------------------------------------------------
 # rebaseline_triggers — WP-SEC-1 detect_rebaseline_triggers.py consumption.
@@ -133,6 +147,10 @@ settings_command_registry:
 # ---------------------------------------------------------------------------
 
 rebaseline_triggers:
+  - AGENTS.md
+  - .codex/config.toml
+  - .codex/hooks.json
+  - .claude/agents/codex-dev.md
   - .wow-harness/MANIFEST.yaml
   - .wow-harness/issue-adapter.yaml
   - .wow-harness/deploy-allowlist.yaml
@@ -189,9 +207,13 @@ vNext_plugin_registry:
 #                     + 17 H decisions + 1 .githooks/pre-commit = +29)
 #   vNext sync 2026-04-29: 71 (+ 5 review-toolkit + 11 mode-toolkit + 2 toolkit
 #                     skill + 1 review-base.yaml + 1 toolkit-index.yaml = +20)
+#   PR-9 rebase live hook/root count: 30 (count-components.sh)
+#   multi-runtime parity 2026-04-30: 33 (+ user-prompt-submit-context.py,
+#                     worktree-create-h0-guard.py, pre-mcp-guard.py = +3;
+#                     scripts/lib/run-py.sh not in hooks/ so not counted here)
 # ---------------------------------------------------------------------------
 
-physical_files: 71
+physical_files: 33
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.

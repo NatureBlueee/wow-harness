@@ -1,0 +1,125 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-start-reset-risk",
+        "timeout": 5
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-start-harness-banner",
+        "timeout": 6
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-start-magic-docs",
+        "timeout": 15
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-start-toolkit-reminder",
+        "timeout": 10
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py before-submit-harness-ping",
+        "matcher": "UserPromptSubmit",
+        "timeout": 5
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-deploy-guard",
+        "matcher": "Shell",
+        "timeout": 15,
+        "failClosed": false
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-auto-python3",
+        "matcher": "Shell",
+        "timeout": 10
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-tool-call-counter",
+        "timeout": 5
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-review-gatekeeper",
+        "matcher": "Task",
+        "timeout": 10,
+        "failClosed": false
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-sanitize",
+        "matcher": "Read",
+        "timeout": 15,
+        "failClosed": true
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-sanitize",
+        "matcher": "Shell",
+        "timeout": 15,
+        "failClosed": true
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-mcp-guard",
+        "timeout": 10,
+        "failClosed": true
+      }
+    ],
+    "postToolUse": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py post-write-bundle",
+        "matcher": "Write|Edit",
+        "timeout": 60
+      }
+    ],
+    "postToolUseFailure": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py post-tool-failure",
+        "timeout": 10
+      }
+    ],
+    "subagentStart": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py subagent-start",
+        "timeout": 5,
+        "failClosed": false
+      }
+    ],
+    "subagentStop": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py subagent-stop",
+        "timeout": 5,
+        "failClosed": false
+      }
+    ],
+    "preCompact": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py pre-compact",
+        "timeout": 15
+      }
+    ],
+    "stop": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py stop-evaluator",
+        "timeout": 30
+      }
+    ],
+    "sessionEnd": [
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-end-reflection",
+        "timeout": 15
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-end-trace",
+        "timeout": 45
+      },
+      {
+        "command": "bash scripts/lib/run-py.sh scripts/cursor/wow_cursor_bridge.py session-end-deploy-progress",
+        "timeout": 10
+      }
+    ]
+  }
+}

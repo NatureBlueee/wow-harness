@@ -39,21 +39,36 @@ if command -v jq >/dev/null 2>&1; then
   CMD_INSTANCES=$(jq '[
     .hooks.PreToolUse[]?.hooks[]?,
     .hooks.PostToolUse[]?.hooks[]?,
+    .hooks.PostToolBatch[]?.hooks[]?,
     .hooks.PreCompact[]?.hooks[]?,
     .hooks.SessionStart[]?.hooks[]?,
     .hooks.SessionEnd[]?.hooks[]?,
     .hooks.Stop[]?.hooks[]?,
-    .hooks.PostToolUseFailure[]?.hooks[]?
+    .hooks.PostToolUseFailure[]?.hooks[]?,
+    .hooks.UserPromptSubmit[]?.hooks[]?,
+    .hooks.WorktreeCreate[]?.hooks[]?
   ] | length' .claude/settings.json)
 else
   # Fallback: line-grep. Less precise but works without jq.
   CMD_INSTANCES=$(grep -c '"command":' .claude/settings.json || echo 0)
 fi
 
-# unique_scripts: distinct scripts referenced by those commands.
-# Extract the last `python3 scripts/...` or `bash scripts/...` token and dedupe.
-UNIQUE_SCRIPTS=$(grep -oE '(python3|bash) scripts/[^ "]+' .claude/settings.json \
-  | awk '{print $2}' | sort -u | wc -l | tr -d ' ')
+# unique_scripts: distinct hook scripts referenced by those commands.
+# Two forms:
+#   bash scripts/lib/run-py.sh scripts/X/Y.py  → extract token after run-py.sh
+#   python3|bash scripts/X/Y.py                → extract the scripts/ token directly
+UNIQUE_SCRIPTS=$(
+  {
+    grep '"command":' .claude/settings.json \
+      | grep 'run-py\.sh' \
+      | grep -oE 'run-py\.sh scripts/[^ "\\]+' \
+      | sed 's|run-py\.sh ||'
+    grep '"command":' .claude/settings.json \
+      | grep -v 'run-py\.sh' \
+      | grep -oE '(python3|bash) scripts/[^ "\\]+' \
+      | awk '{print $2}'
+  } | sort -u | wc -l | tr -d ' '
+)
 
 # physical_files: hooks dir + 2 root scripts
 HOOKS_COUNT=$(ls scripts/hooks/*.py scripts/hooks/*.sh scripts/hooks/*.md 2>/dev/null | wc -l | tr -d ' ')
