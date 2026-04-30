@@ -39,11 +39,14 @@ if command -v jq >/dev/null 2>&1; then
   CMD_INSTANCES=$(jq '[
     .hooks.PreToolUse[]?.hooks[]?,
     .hooks.PostToolUse[]?.hooks[]?,
+    .hooks.PostToolBatch[]?.hooks[]?,
     .hooks.PreCompact[]?.hooks[]?,
     .hooks.SessionStart[]?.hooks[]?,
     .hooks.SessionEnd[]?.hooks[]?,
     .hooks.Stop[]?.hooks[]?,
-    .hooks.PostToolUseFailure[]?.hooks[]?
+    .hooks.PostToolUseFailure[]?.hooks[]?,
+    .hooks.UserPromptSubmit[]?.hooks[]?,
+    .hooks.WorktreeCreate[]?.hooks[]?
   ] | length' .claude/settings.json)
 else
   # Fallback: line-grep. Less precise but works without jq.

@@ -10,6 +10,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 _SUBCOMMANDS = frozenset(
@@ -282,9 +283,8 @@ def cmd_subagent_start(root: Path, stdin: str) -> None:
     try:
         marker_dir = root / ACTIVE_REVIEW_DIR
         marker_dir.mkdir(parents=True, exist_ok=True)
-        import time as _t
         _subagent_marker(root, agent_id).write_text(
-            json.dumps({"agent_id": agent_id, "agent_type": agent_type, "started_at": _t.time(), "runtime": "cursor"}),
+            json.dumps({"agent_id": agent_id, "agent_type": agent_type, "started_at": time.time(), "runtime": "cursor"}),
             encoding="utf-8",
         )
     except OSError:
