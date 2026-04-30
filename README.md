@@ -47,15 +47,22 @@ wow-harness applies this principle everywhere: if it matters, enforce it with a 
 
 ### Hooks: enforcement at the moment of action
 
-16 hooks across 7 lifecycle stages. They intercept *as things happen*, not after:
+21 hooks across 9 lifecycle stages. They intercept *as things happen*, not after:
 
 ```
-SessionStart  →  Load context, reset risk state, surface tools
-PreToolUse    →  Block unsafe deploys, gate review agents, sanitize reads
-PostToolUse   →  Route context on edit, detect loops, track risk
-Stop          →  Verify completion candidate exists (transcript × git diff)
-SessionEnd    →  Reflect, analyze traces, persist progress
+SessionStart       →  Load context, reset risk state, surface tools
+UserPromptSubmit   →  Inject context fragments at prompt time
+PreToolUse         →  Block unsafe deploys, gate review agents, sanitize reads
+PostToolUse        →  Route context on edit, detect loops, track risk
+PostToolUseFailure →  Analyze failures, log patterns
+PreCompact         →  Emit minimal state pointer before context compaction
+Stop               →  Verify completion candidate exists (transcript × git diff)
+SessionEnd         →  Reflect, analyze traces, persist progress
+WorktreeCreate     →  Enforce H-series isolation scope (H0.1)
 ```
+
+Hooks are delivered via a `run-py.sh` bridge so the same Python logic works
+across Claude Code, Codex, Cursor, and OpenCode without duplication.
 
 ### The 8-Gate State Machine
 
@@ -105,7 +112,7 @@ your-project/
 │   ├── skills/          # 16 agent behavior definitions
 │   └── rules/           # Path-scoped context (auto-loaded by file path)
 ├── scripts/
-│   ├── hooks/           # 16 lifecycle hooks
+│   ├── hooks/           # 21 lifecycle hooks
 │   └── checks/          # 15 automated validators
 └── CLAUDE.md            # Governance guide (generated, yours to edit)
 ```
