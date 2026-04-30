@@ -6,7 +6,7 @@
 
 This is the answer.
 
-wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), with Codex project hooks and global hook dispatch for Cursor / Claude / OpenCode. It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
+wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), with additional support for Codex (advisory hooks), Cursor CLI (global hook dispatch), and experimental OpenCode compatibility (PoC, archived upstream). It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
 
 ## The Problem
 

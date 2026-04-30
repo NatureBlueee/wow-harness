@@ -187,8 +187,18 @@ def main() -> None:
     check_only = "--check-only" in sys.argv
     once = "--once" in sys.argv
     dry_run = "--dry-run" in sys.argv
+    batch = "--batch" in sys.argv
 
     if not _issue_adapter_allows_feedback():
+        sys.exit(0)
+
+    # PostToolBatch entry (v0): drain stdin and noop. Reserved for future
+    # batched processing of parallel Edit/Write tool calls.
+    if batch:
+        try:
+            sys.stdin.read()
+        except (OSError, ValueError):
+            pass
         sys.exit(0)
 
     # 每次 hook 触发记录 — 即使后续 early-exit 也算一次触发

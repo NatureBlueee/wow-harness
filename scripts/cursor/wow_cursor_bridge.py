@@ -19,8 +19,11 @@ _SUBCOMMANDS = frozenset(
         "pre-auto-python3",
         "pre-tool-call-counter",
         "pre-review-gatekeeper",
+        "pre-mcp-guard",
         "post-write-bundle",
         "post-tool-failure",
+        "subagent-start",
+        "subagent-stop",
         "session-start-reset-risk",
         "session-start-harness-banner",
         "session-start-magic-docs",
@@ -33,6 +36,8 @@ _SUBCOMMANDS = frozenset(
         "session-end-deploy-progress",
     }
 )
+
+ACTIVE_REVIEW_DIR = Path(".wow-harness") / "active-review-agents"
 
 
 def normalize_stdin_for_cc(stdin: str) -> str:
@@ -248,6 +253,60 @@ def cmd_stop_evaluator(root: Path, stdin: str) -> None:
     sys.exit(0)
 
 
+def cmd_pre_mcp_guard(root: Path, stdin: str) -> None:
+    script = root / "scripts" / "hooks" / "pre-mcp-guard.py"
+    result = _run(root, [sys.executable, str(script)], stdin, timeout=10)
+    raw = (result.stdout or "").strip()
+    if result.returncode == 2:
+        msg = (result.stderr or "").strip() or "pre-mcp-guard blocked this MCP call"
+        print(json.dumps({"permission": "deny", "user_message": msg, "agent_message": msg}, ensure_ascii=False))
+        sys.exit(2)
+    if raw:
+        sys.stdout.write(raw + "\n")
+    else:
+        print(json.dumps({"permission": "allow"}))
+
+
+def _subagent_marker(root: Path, agent_id: str) -> Path:
+    safe = "".join(c if c.isalnum() or c in "-_." else "_" for c in agent_id)[:80] or "unknown"
+    return root / ACTIVE_REVIEW_DIR / f"cursor-{safe}.json"
+
+
+def cmd_subagent_start(root: Path, stdin: str) -> None:
+    try:
+        data = json.loads(stdin) if stdin.strip() else {}
+    except json.JSONDecodeError:
+        data = {}
+    agent_id = str(data.get("subagent_id") or data.get("agent_id") or data.get("id") or f"pid-{os.getpid()}")
+    agent_type = data.get("subagent_type") or data.get("agent_type") or data.get("type") or "unknown"
+    try:
+        marker_dir = root / ACTIVE_REVIEW_DIR
+        marker_dir.mkdir(parents=True, exist_ok=True)
+        import time as _t
+        _subagent_marker(root, agent_id).write_text(
+            json.dumps({"agent_id": agent_id, "agent_type": agent_type, "started_at": _t.time(), "runtime": "cursor"}),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+    print("{}")
+
+
+def cmd_subagent_stop(root: Path, stdin: str) -> None:
+    try:
+        data = json.loads(stdin) if stdin.strip() else {}
+    except json.JSONDecodeError:
+        data = {}
+    agent_id = str(data.get("subagent_id") or data.get("agent_id") or data.get("id") or f"pid-{os.getpid()}")
+    try:
+        marker = _subagent_marker(root, agent_id)
+        if marker.exists():
+            marker.unlink()
+    except OSError:
+        pass
+    print("{}")
+
+
 def cmd_session_end(root: Path, stdin: str, script_name: str) -> None:
     script = root / "scripts" / "hooks" / script_name
     subprocess.run(
@@ -285,6 +344,12 @@ def main() -> None:
         cmd_pre_tool_call_counter(root, stdin)
     elif subcommand == "pre-review-gatekeeper":
         cmd_pre_review_gatekeeper(root, stdin)
+    elif subcommand == "pre-mcp-guard":
+        cmd_pre_mcp_guard(root, stdin)
+    elif subcommand == "subagent-start":
+        cmd_subagent_start(root, stdin)
+    elif subcommand == "subagent-stop":
+        cmd_subagent_stop(root, stdin)
     elif subcommand == "post-write-bundle":
         cmd_post_write_bundle(root, stdin)
     elif subcommand == "post-tool-failure":

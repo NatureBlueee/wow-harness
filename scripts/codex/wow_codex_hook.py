@@ -97,7 +97,10 @@ def run_process(root: Path, argv: list[str], stdin: str, timeout: int) -> RunRes
 
 
 def run_py(root: Path, relative: str, stdin: str, timeout: int) -> RunResult:
-    return run_process(root, ["python3", str(root / relative)], stdin, timeout)
+    # Use sys.executable so child scripts run on the same interpreter that
+    # run-py.sh resolved for this hook. Avoids re-hitting a missing `python3`
+    # on PATH (e.g. Microsoft Store stub on Windows).
+    return run_process(root, [sys.executable, str(root / relative)], stdin, timeout)
 
 
 def print_json(payload: dict) -> None:
@@ -347,13 +350,21 @@ def cmd_post_write_bundle(root: Path, payload: dict) -> int:
     return 0
 
 
+def cmd_user_prompt_submit(root: Path, stdin: str) -> int:
+    result = run_py(root, "scripts/hooks/before-submit-harness-ping.py", stdin, 5)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    print_json({})
+    return 0
+
+
 def cmd_stop_check(root: Path, payload: dict) -> int:
     if payload.get("stop_hook_active") is True:
         print_json({})
         return 0
     result = run_process(
         root,
-        ["python3", str(root / "scripts" / "codex" / "wow_codex_check.py"), "--strict"],
+        [sys.executable, str(root / "scripts" / "codex" / "wow_codex_check.py"), "--strict"],
         "",
         45,
     )
@@ -371,6 +382,7 @@ def main() -> int:
         "subcommand",
         choices=[
             "session-start",
+            "user-prompt-submit",
             "pre-sanitize",
             "pre-deploy-guard",
             "permission-request-deploy-guard",
@@ -387,6 +399,8 @@ def main() -> int:
 
     if args.subcommand == "session-start":
         return cmd_session_start(root, stdin)
+    if args.subcommand == "user-prompt-submit":
+        return cmd_user_prompt_submit(root, stdin)
     if args.subcommand == "pre-sanitize":
         return cmd_pre_sanitize(root, stdin)
     if args.subcommand == "pre-deploy-guard":

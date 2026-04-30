@@ -260,6 +260,26 @@ function runProcess(command, args, { cwd, stdin = "", timeoutMs = 45000 } = {}) 
   })
 }
 
+async function runDeployGuard(worktree, command) {
+  if (!command || typeof command !== "string") return { allowed: true }
+  const payload = JSON.stringify({
+    tool_name: "Bash",
+    tool_input: { command },
+  })
+  const result = await runProcess(
+    "bash",
+    [path.join(worktree, "scripts", "lib", "run-py.sh"), path.join(worktree, "scripts", "deploy-guard.py")],
+    { cwd: worktree, stdin: payload, timeoutMs: 15000 },
+  )
+  const reason = [result.stderr, result.stdout].filter(Boolean).join("\n").trim()
+  return {
+    allowed: result.code === 0,
+    exit_code: result.code,
+    reason,
+    timed_out: result.timedOut,
+  }
+}
+
 async function runGuardFeedback(worktree, filePath) {
   const relPath = toRelativeFilePath(filePath, worktree)
   if (!relPath) return null
@@ -353,6 +373,33 @@ export const WowHarnessRuntimePlugin = async ({ worktree, client }) => {
           },
         )
       }
+
+      if (event.type === "session.compacted") {
+        await appendVisible(worktree, "session.compacted", {
+          session_id: event.sessionID ?? event.sessionId ?? null,
+        })
+      }
+
+      if (event.type === "permission.asked" || event.type === "permission.replied") {
+        await appendVisible(worktree, event.type, {
+          session_id: event.sessionID ?? event.sessionId ?? null,
+          tool: event.tool ?? event.properties?.tool ?? null,
+          response: event.response ?? null,
+        })
+        await appendJsonlCompat(
+          worktree,
+          ["metrics", "opencode-permission-events.jsonl"],
+          ["metrics", "opencode-permission-events.jsonl"],
+          {
+            ts: nowIso(),
+            event: event.type,
+            source: "opencode",
+            session_id: event.sessionID ?? event.sessionId ?? null,
+            tool: event.tool ?? event.properties?.tool ?? null,
+            response: event.response ?? null,
+          },
+        )
+      }
     },
 
     "tool.execute.before": async (input, output) => {
@@ -361,6 +408,38 @@ export const WowHarnessRuntimePlugin = async ({ worktree, client }) => {
         if (typeof filePath === "string" && filePath.includes(".env")) {
           throw new Error("wow-harness: reading .env files is blocked")
         }
+      }
+
+      if (input.tool === "bash") {
+        const command = output?.args?.command ?? input?.args?.command ?? ""
+        if (typeof command === "string" && command.trim()) {
+          const guard = await runDeployGuard(worktree, command)
+          await appendVisible(worktree, "deploy-guard.checked", {
+            allowed: guard.allowed,
+            exit_code: guard.exit_code,
+            timed_out: guard.timed_out,
+          })
+          if (!guard.allowed) {
+            await appendJsonlCompat(
+              worktree,
+              ["metrics", "deploy-guard-blocks.jsonl"],
+              ["metrics", "deploy-guard-blocks.jsonl"],
+              {
+                ts: nowIso(),
+                event: "deploy_guard_block",
+                source: "opencode",
+                exit_code: guard.exit_code,
+                reason_bytes: guard.reason.length,
+              },
+            )
+            const detail = guard.reason ? `\n${guard.reason}` : ""
+            throw new Error(`wow-harness deploy-guard blocked this command (exit ${guard.exit_code}).${detail}`)
+          }
+        }
+      }
+
+      if (EDIT_TOOLS.has(input.tool)) {
+        await appendVisible(worktree, "guard.checking", { tool: input.tool })
       }
     },
 
@@ -403,6 +482,10 @@ export const WowHarnessRuntimePlugin = async ({ worktree, client }) => {
         await appendVisible(worktree, injected ? "guard-feedback.prompted" : "guard-feedback.logged", {
           tool: input.tool,
           feedback_count: feedbackTexts.length,
+        })
+        await appendVisible(worktree, "guard.findings", {
+          tool: input.tool,
+          count: feedbackTexts.length,
         })
       }
     },

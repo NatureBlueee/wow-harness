@@ -6,9 +6,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" session-start",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py session-start",
             "timeout": 30,
             "statusMessage": "Loading wow-harness context"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py user-prompt-submit",
+            "timeout": 5,
+            "statusMessage": "wow-harness ping"
           }
         ]
       }
@@ -19,15 +31,26 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" pre-sanitize",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py pre-sanitize",
             "timeout": 30,
             "statusMessage": "Checking sensitive reads"
           },
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" pre-deploy-guard",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py pre-deploy-guard",
             "timeout": 15,
             "statusMessage": "Checking deploy guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py pre-sanitize",
+            "timeout": 30,
+            "statusMessage": "Checking sensitive reads"
           }
         ]
       }
@@ -38,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" permission-request-deploy-guard",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py permission-request-deploy-guard",
             "timeout": 15,
             "statusMessage": "Checking approval request"
           }
@@ -51,7 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" post-write-bundle",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py post-write-bundle",
             "timeout": 60,
             "statusMessage": "Projecting wow-harness feedback"
           }
@@ -63,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/codex/wow_codex_hook.py\" stop-check",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/codex/wow_codex_hook.py stop-check",
             "timeout": 45,
             "statusMessage": "Checking Codex completion"
           }
