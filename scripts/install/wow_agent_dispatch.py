@@ -211,11 +211,11 @@ def _log_event(runtime: str, subcommand: str, *, mode: str, root: Path | None = 
 def _append_visible_touch(root: Path, runtime: str, subcommand: str) -> None:
     """Project-local JSONL + optional stderr trace so users see harness activity."""
     try:
-        scripts_dir = Path(__file__).resolve().parent.parent
+        scripts_dir = root / "scripts" / "lib"
         sd = str(scripts_dir)
         if sd not in sys.path:
             sys.path.insert(0, sd)
-        from lib.harness_visible import append_touch  # noqa: PLC0415
+        from harness_visible import append_touch  # noqa: PLC0415
 
         append_touch(root, runtime, subcommand)
     except Exception:

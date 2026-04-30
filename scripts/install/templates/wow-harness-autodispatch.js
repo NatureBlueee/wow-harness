@@ -6,6 +6,41 @@ function nowIso() {
   return new Date().toISOString()
 }
 
+const RISK_ORDER = { R0: 0, R1: 1, R2: 2, R3: 3, R4: 4 }
+const RISK_ELEVATORS = [
+  ["scripts/deploy", "R4"],
+  ["backend/product/db/migration", "R4"],
+  ["CLAUDE.md", "R3"],
+  ["AGENTS.md", "R3"],
+  [".wow-harness/", "R3"],
+  [".claude/settings.json", "R3"],
+  [".claude/skills/", "R3"],
+  [".claude/rules/", "R3"],
+  [".claude/agents/", "R3"],
+  [".codex/", "R3"],
+  [".cursor/", "R3"],
+  [".opencode/", "R3"],
+  ["scripts/codex/", "R3"],
+  ["scripts/hooks/", "R3"],
+  ["scripts/checks/", "R3"],
+  ["scripts/install/", "R3"],
+  [".github/", "R3"],
+  ["backend/product/routes/", "R2"],
+  ["backend/product/config.py", "R2"],
+  ["backend/server.py", "R2"],
+  ["docs/decisions/ADR-", "R2"],
+  ["mcp-server/", "R2"],
+  ["mcp-server-node/", "R2"],
+  ["website/app/", "R2"],
+]
+
+function classifyFile(relPath) {
+  for (const [prefix, risk] of RISK_ELEVATORS) {
+    if (relPath.startsWith(prefix)) return risk
+  }
+  return "R0"
+}
+
 async function exists(p) {
   try {
     await stat(p)
@@ -195,6 +230,14 @@ export const WowHarnessAutodispatch = async ({ worktree, client }) => {
         if (feedback) feedbackTexts.push(feedback)
       }
       snap.last_updated = nowIso()
+
+      let maxRisk = snap.risk_level ?? "R0"
+      for (const f of snap.files_touched) {
+        const r = classifyFile(f)
+        if (RISK_ORDER[r] > RISK_ORDER[maxRisk]) maxRisk = r
+      }
+      if (snap.files_touched.length >= 4 && RISK_ORDER[maxRisk] < RISK_ORDER.R1) maxRisk = "R1"
+      snap.risk_level = maxRisk
 
       await writeJsonCompat(worktree, ["risk-snapshot.json"], ["state", "risk-snapshot.json"], snap)
       await log({ ts: nowIso(), event: "risk.snapshot.update", filePaths: filePaths.map((p) => toRelative(worktree, p)) })

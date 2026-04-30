@@ -178,6 +178,12 @@ function nowIso() {
   return new Date().toISOString()
 }
 
+function isEnvFile(filePath) {
+  const base = path.basename(filePath)
+  if (base === ".env.example" || base === ".env.sample" || base === ".env.template") return false
+  return base === ".env" || base.startsWith(".env.")
+}
+
 async function updateRiskSnapshot(worktree, filePath) {
   const relPath = toRelativeFilePath(filePath, worktree)
   if (!relPath) return
@@ -405,7 +411,7 @@ export const WowHarnessRuntimePlugin = async ({ worktree, client }) => {
     "tool.execute.before": async (input, output) => {
       if (input.tool === "read") {
         const filePath = output?.args?.filePath ?? input?.args?.filePath ?? ""
-        if (typeof filePath === "string" && filePath.includes(".env")) {
+        if (typeof filePath === "string" && isEnvFile(filePath)) {
           throw new Error("wow-harness: reading .env files is blocked")
         }
       }

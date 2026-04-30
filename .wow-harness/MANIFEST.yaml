@@ -53,6 +53,11 @@ L1_registry:
   - inbox-inject-on-start.py   # H9 邮箱 SessionStart 注入
   - inbox-poll.sh              # H9 邮箱主窗口轮询
   - inbox-ack.py               # H9 邮箱 ack 回送
+  # multi-runtime parity (2026-04-30, branch codex/consolidate-harness-runtimes)
+  - lib/run-py.sh                      # cross-platform python bridge (skip Win Store stub)
+  - hooks/user-prompt-submit-context.py # UserPromptSubmit context-fragment injection
+  - hooks/worktree-create-h0-guard.py   # WorktreeCreate H0.1 施工隔离 enforcement
+  - hooks/pre-mcp-guard.py              # Cursor beforeMCPExecution sanitize guard
 
 L2_registry:
   - check_api_types.py
@@ -130,7 +135,11 @@ settings_command_registry:
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/session-reflection.py,            timeout: 10 }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/trace-analyzer.py,                timeout: 30, args: "analyze --days 1 --min-samples 3" }
   - { stage: SessionEnd,         matcher: "*",          script: scripts/hooks/deploy-progress-on-session-end.py, timeout: 5 }
-  - { stage: PostToolUseFailure, matcher: "*",          script: scripts/hooks/failure-analyzer.py,              timeout: 5 }
+  - { stage: PostToolUseFailure, matcher: "*",          script: scripts/hooks/failure-analyzer.py,              timeout: 5  }
+  # multi-runtime parity additions (2026-04-30)
+  - { stage: UserPromptSubmit,  matcher: "",           script: scripts/hooks/user-prompt-submit-context.py,   timeout: 5  }
+  - { stage: PostToolBatch,     matcher: "",           script: scripts/guard-feedback.py,                      timeout: 30, args: "--batch" }
+  - { stage: WorktreeCreate,    matcher: "",           script: scripts/hooks/worktree-create-h0-guard.py,     timeout: 5  }
 
 # ---------------------------------------------------------------------------
 # rebaseline_triggers — WP-SEC-1 detect_rebaseline_triggers.py consumption.
@@ -199,9 +208,12 @@ vNext_plugin_registry:
 #   vNext sync 2026-04-29: 71 (+ 5 review-toolkit + 11 mode-toolkit + 2 toolkit
 #                     skill + 1 review-base.yaml + 1 toolkit-index.yaml = +20)
 #   PR-9 rebase live hook/root count: 30 (count-components.sh)
+#   multi-runtime parity 2026-04-30: 33 (+ user-prompt-submit-context.py,
+#                     worktree-create-h0-guard.py, pre-mcp-guard.py = +3;
+#                     scripts/lib/run-py.sh not in hooks/ so not counted here)
 # ---------------------------------------------------------------------------
 
-physical_files: 30
+physical_files: 33
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.
