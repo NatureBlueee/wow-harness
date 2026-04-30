@@ -50,6 +50,13 @@ L1_registry:
   - inbox-inject-on-start.py   # H9 邮箱 SessionStart 注入
   - inbox-poll.sh              # H9 邮箱主窗口轮询
   - inbox-ack.py               # H9 邮箱 ack 回送
+  # multi-runtime parity (2026-04-30, ADR-045)
+  - before-submit-harness-ping.py   # Cursor/UserPromptSubmit — ping harness on each prompt
+  - pre-mcp-guard.py                # Cursor/beforeMCPExecution — sanitize MCP tool args
+  - user-prompt-submit-context.py   # Claude Code UserPromptSubmit — inject context at prompt time
+  - worktree-create-h0-guard.py     # Claude Code WorktreeCreate — H0.1 isolation guard
+  - session-start-harness-banner.py # Cursor/SessionStart — banner advisory
+  - precompact.py                   # vNext PreCompact — replaces precompact.sh (ADR-045)
 
 L2_registry:
   - check_api_types.py
@@ -85,6 +92,7 @@ L5_registry:
   - ADR-038-harness-optimization-strategy.md
   - ADR-041-codex-claude-code-division-of-labor.md
   # H 系列 sync (2026-04-29, from Towow @ dff58afb) — 9 ADR + 8 PLAN
+  - ADR-045-codex-native-hooks-runtime-parity.md
   - ADR-H0-meta-charter.md
   - ADR-H1-crystal-learn-revival.md
   - ADR-H2-identity-isolation.md
@@ -189,9 +197,10 @@ vNext_plugin_registry:
 #                     + 17 H decisions + 1 .githooks/pre-commit = +29)
 #   vNext sync 2026-04-29: 71 (+ 5 review-toolkit + 11 mode-toolkit + 2 toolkit
 #                     skill + 1 review-base.yaml + 1 toolkit-index.yaml = +20)
+#   multi-runtime 2026-04-30: 78 (+ 6 hooks + 1 ADR-045 = +7)
 # ---------------------------------------------------------------------------
 
-physical_files: 71
+physical_files: 78
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.
