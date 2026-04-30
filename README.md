@@ -47,14 +47,17 @@ wow-harness applies this principle everywhere: if it matters, enforce it with a 
 
 ### Hooks: enforcement at the moment of action
 
-18 hook commands across 7 lifecycle stages. They intercept *as things happen*, not after:
+21 hook commands across 8 lifecycle stages. They intercept *as things happen*, not after:
 
 ```
-SessionStart  →  Load context, reset risk state, surface tools
-PreToolUse    →  Block unsafe deploys, gate review agents, sanitize reads
-PostToolUse   →  Route context on edit, detect loops, track risk
-Stop          →  Verify completion candidate exists (transcript × git diff)
-SessionEnd    →  Reflect, analyze traces, persist progress
+SessionStart      →  Load context, reset risk state, surface tools
+UserPromptSubmit  →  Inject relevant context before each prompt
+PreToolUse        →  Block unsafe deploys, gate review agents, sanitize reads
+PostToolUse       →  Route context on edit, detect loops, track risk
+PostToolBatch     →  Batch guard-feedback across multi-file edits
+WorktreeCreate    →  Enforce H0.1 worktree naming and scope isolation
+Stop              →  Verify completion candidate exists (transcript × git diff)
+SessionEnd        →  Reflect, analyze traces, persist progress
 ```
 
 ### The 8-Gate State Machine
@@ -107,7 +110,7 @@ your-project/
 ├── AGENTS.md             # Codex-readable project rules and delegation boundaries
 ├── .codex/
 │   ├── config.toml       # Enables Codex project hooks
-│   └── hooks.json        # Advisory Codex runtime feedback
+│   └── hooks.json        # Advisory Codex runtime feedback (native parity)
 ├── .claude/
 │   ├── settings.json    # Hook registrations (appends, won't clobber)
 │   ├── agents/          # Delegation targets such as codex-dev
@@ -115,7 +118,8 @@ your-project/
 │   └── rules/           # Path-scoped context (auto-loaded by file path)
 ├── scripts/
 │   ├── hooks/           # lifecycle hook scripts
-│   └── checks/          # 15 automated validators
+│   ├── checks/          # 15 automated validators
+│   └── lib/run-py.sh    # Cross-platform Python bridge (skips Windows Store stub)
 └── CLAUDE.md            # Governance guide (generated, yours to edit)
 ```
 
@@ -166,8 +170,11 @@ python3 scripts/codex/wow_codex_check.py --strict
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
 - Codex CLI is optional; when present and trusted, it reads `AGENTS.md` and project `.codex/` hooks.
+- Cursor CLI is optional; global hook dispatch via `wow_global_hooks.py`.
+- OpenCode is optional; experimental PoC plugin in `.opencode/`.
 - Python 3.9+
 - Git
+- On Windows: Python must be resolvable via `python3`, `python`, or `py -3` (Windows Store stub is auto-skipped by `run-py.sh`).
 
 ## Origin
 
