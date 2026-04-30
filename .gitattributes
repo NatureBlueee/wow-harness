@@ -1,0 +1,24 @@
+# Enforce LF line endings for all text files.
+# Shell scripts and Python files must have LF in the repo — CRLF breaks
+# bash execution in WSL/Linux even when developed on Windows.
+* text=auto
+
+# Scripts: always LF (bash requires it; Python also benefits from consistency)
+*.sh    text eol=lf
+*.py    text eol=lf
+
+# JSON / YAML / Markdown: LF for cross-platform consistency
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+
+# Binary — never touch line endings
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.gz    binary
+*.zip   binary
