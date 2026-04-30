@@ -3,8 +3,6 @@
 **状态**: accepted (v1.0 — 2026-04-07，砍掉 v0.1/v0.2/v0.3 过度工程化设计)
 **日期**: 2026-04-07
 
-**2026-04-29 更新**：ADR-045 局部 supersede 本 ADR §3 中“Codex 不加 PostToolUse / PreToolUse hook”的实现边界。仅允许官方 Codex lifecycle hooks 做 advisory feedback；本 ADR 的“不做 Codex router / 不参与 Gate 审查 / 不建强制分流状态机”仍完全有效。
-
 ## 0. 历史与重写理由
 
 v0.1 → v0.3 在 Gate 2 三轮审查中被红队推着持续加机制，从"分流偏好"膨胀成"18 个架构变更 + 10 红线 + 12 白线 + 威胁模型 + cumulative drift hook + marker chokepoint + hash 锁"。Nature 看完后判断**过度工程化**：原始诉求只是「让 Claude 自己判断啥时候用 Codex + 配几个自动化省 token」，不是建一个微型操作系统。

@@ -19,7 +19,6 @@ paths:
 
 ```
 {{PROJECT_NAME}}/
-├── AGENTS.md             # Codex 可读的项目规则和分流边界
 ├── .claude/              # Claude Code 配置 (settings.json + rules/ + skills/ + agents/)
 ├── .wow-harness/         # wow-harness runtime 数据 (metrics/proposals/guard/tasks)
 ├── scripts/
@@ -33,7 +32,7 @@ paths:
 │   ├── decisions/        # ADR / PLAN / TECH 决策文档
 │   ├── issues/           # Guardian issue (ADR-030 closure semantics)
 │   └── architecture/     # 架构图与核心概念
-└── CLAUDE.md             # Claude Code 根入口, 声明不可妥协约束 + path-scoped rules 触发表
+└── CLAUDE.md             # 项目根入口, 声明不可妥协约束 + path-scoped rules 触发表
 ```
 
 ## 禁止事项

@@ -11,29 +11,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/guard-feedback.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/guard-feedback.py",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/loop-detection.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/loop-detection.py",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/risk-tracker.py 2>/dev/null || true",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/risk-tracker.py 2>/dev/null || true",
             "timeout": 3
-          }
-        ]
-      }
-    ],
-    "PostToolBatch": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/guard-feedback.py --batch 2>/dev/null || true",
-            "timeout": 30
           }
         ]
       }
@@ -44,13 +33,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/deploy-guard.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/deploy-guard.py",
             "timeout": 10
           },
           {
             "type": "command",
             "if": "Bash(python *)",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/auto-python3.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/auto-python3.py",
             "timeout": 5
           }
         ]
@@ -60,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/tool-call-counter.py 2>/dev/null || true",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/tool-call-counter.py 2>/dev/null || true",
             "timeout": 3
           }
         ]
@@ -70,7 +59,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/review-agent-gatekeeper.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/review-agent-gatekeeper.py",
             "timeout": 5
           }
         ]
@@ -80,7 +69,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/sanitize-on-read.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/sanitize-on-read.py",
             "timeout": 10
           }
         ]
@@ -104,33 +93,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/session-start-reset-risk.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-start-reset-risk.py",
             "timeout": 3
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/session-start-harness-banner.py",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/session-start-magic-docs.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-start-magic-docs.py",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/session-start-toolkit-reminder.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/user-prompt-submit-context.py 2>/dev/null || true",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-start-toolkit-reminder.py",
             "timeout": 5
           }
         ]
@@ -142,7 +115,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/stop-evaluator.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/stop-evaluator.py",
             "timeout": 10
           }
         ]
@@ -154,17 +127,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/session-reflection.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/session-reflection.py",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/trace-analyzer.py analyze --days 1 --min-samples 3 2>/dev/null || true",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/trace-analyzer.py analyze --days 1 --min-samples 3 2>/dev/null || true",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/deploy-progress-on-session-end.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/deploy-progress-on-session-end.py",
             "timeout": 5
           }
         ]
@@ -176,18 +149,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/failure-analyzer.py",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "WorktreeCreate": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && bash scripts/lib/run-py.sh scripts/hooks/worktree-create-h0-guard.py",
+            "command": "cd \"$(scripts/hooks/find-project-root.sh)\" && python3 scripts/hooks/failure-analyzer.py",
             "timeout": 5
           }
         ]

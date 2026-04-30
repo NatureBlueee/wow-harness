@@ -6,7 +6,7 @@
 
 This is the answer.
 
-wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), with additional support for Codex (advisory hooks), Cursor CLI (global hook dispatch), and experimental OpenCode compatibility (PoC, archived upstream). It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
+wow-harness is a governance layer for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). It makes AI agents reliable enough that you can set direction, walk away, and trust the work actually lands — with review gates, completion verification, and mechanical enforcement that no amount of prompting can replicate.
 
 ## The Problem
 
@@ -47,17 +47,14 @@ wow-harness applies this principle everywhere: if it matters, enforce it with a 
 
 ### Hooks: enforcement at the moment of action
 
-21 hook commands across 8 lifecycle stages. They intercept *as things happen*, not after:
+16 hooks across 7 lifecycle stages. They intercept *as things happen*, not after:
 
 ```
-SessionStart      →  Load context, reset risk state, surface tools
-UserPromptSubmit  →  Inject relevant context before each prompt
-PreToolUse        →  Block unsafe deploys, gate review agents, sanitize reads
-PostToolUse       →  Route context on edit, detect loops, track risk
-PostToolBatch     →  Batch guard-feedback across multi-file edits
-WorktreeCreate    →  Enforce H0.1 worktree naming and scope isolation
-Stop              →  Verify completion candidate exists (transcript × git diff)
-SessionEnd        →  Reflect, analyze traces, persist progress
+SessionStart  →  Load context, reset risk state, surface tools
+PreToolUse    →  Block unsafe deploys, gate review agents, sanitize reads
+PostToolUse   →  Route context on edit, detect loops, track risk
+Stop          →  Verify completion candidate exists (transcript × git diff)
+SessionEnd    →  Reflect, analyze traces, persist progress
 ```
 
 ### The 8-Gate State Machine
@@ -83,10 +80,6 @@ G0 Problem  →  G1 Design  →  G2 Review*
 
 Each skill has `{{PLACEHOLDER}}` structural slots designed to be filled with your project's context during installation.
 
-### Codex lane
-
-Codex is integrated as a bounded execution lane, not as a new review authority. `AGENTS.md` carries the Codex-readable project rules, `.codex/hooks.json` provides official Codex lifecycle feedback, and `.claude/agents/codex-dev.md` gives Claude a concrete delegation target for mechanical implementation work such as batch refactors, tests, docs, shell scripts, and CI checks. ADR-045 supersedes ADR-041 only for advisory Codex hooks; Codex still does not participate in Gate 2/4/6/8 review.
-
 ## Install
 
 ```bash
@@ -107,56 +100,17 @@ python3 scripts/install/phase2_auto.py /path/to/your/project --tier drop-in
 
 ```
 your-project/
-├── AGENTS.md             # Codex-readable project rules and delegation boundaries
-├── .codex/
-│   ├── config.toml       # Enables Codex project hooks
-│   └── hooks.json        # Advisory Codex runtime feedback (native parity)
 ├── .claude/
 │   ├── settings.json    # Hook registrations (appends, won't clobber)
-│   ├── agents/          # Delegation targets such as codex-dev
 │   ├── skills/          # 16 agent behavior definitions
 │   └── rules/           # Path-scoped context (auto-loaded by file path)
 ├── scripts/
-│   ├── hooks/           # lifecycle hook scripts
-│   ├── checks/          # 15 automated validators
-│   └── lib/run-py.sh    # Cross-platform Python bridge (skips Windows Store stub)
+│   ├── hooks/           # 16 lifecycle hooks
+│   └── checks/          # 15 automated validators
 └── CLAUDE.md            # Governance guide (generated, yours to edit)
 ```
 
 The installer is idempotent — run it twice, get the same result.
-
-### Cursor CLI + Claude + OpenCode global hooks (optional)
-
-To use the same hook bundle from **any** checkout via user-level Cursor / Claude config and the optional OpenCode plugin (without committing `.cursor/` into every repo), install the bundled dispatcher:
-
-```bash
-python3 scripts/install/wow_global_hooks.py install
-```
-
-Details: [docs/dual-cli-global-hooks.md](docs/dual-cli-global-hooks.md).
-
-To diagnose runtime parity across Claude Code, Cursor, OpenCode, and Codex:
-
-```bash
-python3 scripts/install/wow_runtime_doctor.py
-```
-
-### Experimental OpenCode PoC
-
-This repo now includes an experimental OpenCode compatibility proof-of-concept:
-
-- Project plugin: `.opencode/plugins/wow-harness-runtime.js`
-- Read-only reviewer agent: `.opencode/agents/wow-reviewer.md`
-- Project config: `opencode.json`
-- Notes: [docs/opencode-poc.md](docs/opencode-poc.md)
-
-Current PoC scope is intentionally narrow: session bootstrap, `.env` read sanitization, explicit OpenCode permissions, post-edit risk snapshots, post-edit guard/context feedback, compaction reminders, stop-time completion proposals, and read-only reviewer isolation. It proves wow-harness can attach to another agent runtime; it does not claim full Claude Code parity yet.
-
-Codex has project hooks when the `.codex/` layer is trusted. If hooks are disabled or you want a manual completion pass, run:
-
-```bash
-python3 scripts/codex/wow_codex_check.py --strict
-```
 
 ## Design Principles
 
@@ -169,12 +123,8 @@ python3 scripts/codex/wow_codex_check.py --strict
 ## Requirements
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
-- Codex CLI is optional; when present and trusted, it reads `AGENTS.md` and project `.codex/` hooks.
-- Cursor CLI is optional; global hook dispatch via `wow_global_hooks.py`.
-- OpenCode is optional; experimental PoC plugin in `.opencode/`.
 - Python 3.9+
 - Git
-- On Windows: Python must be resolvable via `python3`, `python`, or `py -3` (Windows Store stub is auto-skipped by `run-py.sh`).
 
 ## Origin
 

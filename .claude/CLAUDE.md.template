@@ -26,21 +26,6 @@ Code session:
 See `.wow-harness/MANIFEST.yaml` for the active registry and
 `{{HARNESS_DOCS_URL}}` for the upstream contract.
 
-## Codex delegation
-
-Before taking execution work locally, ask whether it should be delegated to
-Codex. Prefer Codex for bounded implementation tasks: batch replacements,
-i18n extraction, mechanical refactors, tests in an existing framework,
-documentation updates, shell scripts, and CI checks.
-
-Do not delegate these to Codex without explicit approval:
-- frontend React component structure, interaction logic, new pages, or new
-  user-facing features
-- cross-module data-flow changes across frontend, API, persistence, or deploy
-- aesthetic decisions, product voice decisions, or `nature-designer` flows
-
-Codex is an execution lane, not the independent reviewer for Gate 2/4/6/8.
-
 <!-- wow-harness:end -->
 
 ## Language

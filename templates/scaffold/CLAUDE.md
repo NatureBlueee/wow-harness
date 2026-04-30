@@ -49,15 +49,6 @@ These directories are **runtime-only** and gitignored. They are created automati
 
 ## AI Behavioral Constraints
 
-### Codex delegation
-- Before doing bounded execution work locally, ask whether Codex should handle it
-- Prefer Codex for batch replacements, i18n extraction, mechanical refactors,
-  tests in an existing framework, documentation updates, shell scripts, and CI checks
-- Do not delegate frontend React structure/interaction/new pages, cross-module
-  data-flow changes, aesthetic decisions, or product voice decisions without
-  explicit approval
-- Codex is an execution lane, not the independent reviewer for Gate 2/4/6/8
-
 ### Language
 - All user-facing output in **simplified Chinese**; technical identifiers stay original
 - All commit messages **bilingual** (English title + Chinese summary)
