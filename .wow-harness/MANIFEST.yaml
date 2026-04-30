@@ -188,19 +188,18 @@ vNext_plugin_registry:
     discover_script: .claude/skills/toolkit/list.sh
 
 # ---------------------------------------------------------------------------
-# physical_files — WP-SEC-1 CI double-commit count assertion.
-#   WP-03 commit: 17 (15 hooks + 2 root scripts)
-#   WP-11 commit: 18 (+ install-wow-harness SKILL.md)
-#   post-audit: 22 (+ risk-tracker, session-start-reset-risk, sanitize-on-read,
-#                     context_router, guard_router)
-#   H series sync 2026-04-29: 51 (+ 7 hooks + 2 numbering + 1 rule + 1 schema
-#                     + 17 H decisions + 1 .githooks/pre-commit = +29)
-#   vNext sync 2026-04-29: 71 (+ 5 review-toolkit + 11 mode-toolkit + 2 toolkit
-#                     skill + 1 review-base.yaml + 1 toolkit-index.yaml = +20)
-#   multi-runtime 2026-04-30: 78 (+ 6 hooks + 1 ADR-045 = +7)
+# physical_files — count-components.sh live output assertion.
+# Definition: scripts/hooks/*.{py,sh,md} + 4 L1 root scripts
+#             (guard-feedback.py, deploy-guard.py, context_router.py, guard_router.py)
+# Must equal len(L1_registry items that live in scripts/hooks/ or scripts/ root).
+#
+# History (hooks-only subset, not total harness files):
+#   WP-03: 17  (15 hooks + 2 root scripts)
+#   post-H-series: 29  (+ H-series hooks)
+#   multi-runtime 2026-04-30: 35  (+ 6 new hooks + 2 missing root scripts added)
 # ---------------------------------------------------------------------------
 
-physical_files: 78
+physical_files: 35
 
 # ---------------------------------------------------------------------------
 # bash_read_keywords — Bash matcher read-only classification.

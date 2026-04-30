@@ -55,9 +55,11 @@ fi
 UNIQUE_SCRIPTS=$(grep -oE '(python3|bash) scripts/[^ "]+' .claude/settings.json \
   | awk '{print $2}' | sort -u | wc -l | tr -d ' ')
 
-# physical_files: hooks dir + 2 root scripts
+# physical_files: hooks dir + all L1 root scripts (guard-feedback, deploy-guard,
+# context_router, guard_router). Must match MANIFEST.physical_files exactly.
 HOOKS_COUNT=$(ls scripts/hooks/*.py scripts/hooks/*.sh scripts/hooks/*.md 2>/dev/null | wc -l | tr -d ' ')
-ROOT_COUNT=$(ls scripts/guard-feedback.py scripts/deploy-guard.py 2>/dev/null | wc -l | tr -d ' ')
+ROOT_COUNT=$(ls scripts/guard-feedback.py scripts/deploy-guard.py \
+               scripts/context_router.py scripts/guard_router.py 2>/dev/null | wc -l | tr -d ' ')
 PHYSICAL=$((HOOKS_COUNT + ROOT_COUNT))
 
 echo "command_instances=${CMD_INSTANCES}"
