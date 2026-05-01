@@ -82,10 +82,18 @@ G0 问题  →  G1 设计  →  G2 审查*
 
 ## 安装
 
+**前置步骤：** 运行安装器前，先生成安装密钥：
+
+```bash
+export WOW_HARNESS_INSTALL_HMAC_KEY=$(openssl rand -hex 32)
+```
+
+然后克隆并运行：
+
 ```bash
 git clone https://github.com/NatureBlueee/wow-harness.git
-cd wow-harness
-python3 scripts/install/phase2_auto.py /path/to/your/project --tier drop-in
+cd /path/to/your/project
+python3 /path/to/wow-harness/scripts/install/phase2_auto.py --auto --tier drop-in --scope current
 ```
 
 ### 三个层级
@@ -125,6 +133,7 @@ your-project/
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
 - Python 3.9+
 - Git
+- `WOW_HARNESS_INSTALL_HMAC_KEY` 环境变量（用 `openssl rand -hex 32` 生成）
 
 ## 来历
 
